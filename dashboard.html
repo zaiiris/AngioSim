@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AngioSim — Главная</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body data-page="dashboard">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a href="index.html" class="sidebar-logo">AS</a>
+  <a href="dashboard.html" class="nav-item" data-page="dashboard"><i class="fa-solid fa-chart-line"></i><span class="nav-text" data-t="nav_dashboard">Главная</span></a>
+  <a href="session.html" class="nav-item" data-page="session"><i class="fa-solid fa-play"></i><span class="nav-text" data-t="nav_session">Новая сессия</span></a>
+  <a href="lessons.html" class="nav-item" data-page="lessons"><i class="fa-solid fa-graduation-cap"></i><span class="nav-text" data-t="nav_lessons">Уроки</span></a>
+  <a href="results.html" class="nav-item" data-page="results"><i class="fa-solid fa-clipboard-list"></i><span class="nav-text" data-t="nav_results">Результаты</span></a>
+  <a href="leaderboard.html" class="nav-item" data-page="leaderboard"><i class="fa-solid fa-trophy"></i><span class="nav-text" data-t="nav_leaderboard">Рейтинг</span></a>
+  <a href="profile.html" class="nav-item" data-page="profile"><i class="fa-solid fa-user"></i><span class="nav-text" data-t="nav_profile">Профиль</span></a>
+  <div class="sidebar-sep"></div>
+  <a href="teacher.html" class="nav-item" data-page="teacher"><i class="fa-solid fa-chalkboard-user"></i><span class="nav-text" data-t="nav_teacher">Преподаватель</span></a>
+  <div class="sidebar-bottom">
+    <a href="index.html" class="nav-item"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="nav-text" data-t="nav_logout">Выйти</span></a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 data-t="dash_title">Главная</h1>
+      <p data-t="dash_sub">Добро пожаловать обратно</p>
+    </div>
+    <div class="search-bar-wrap" style="flex:1;max-width:340px;margin:0 16px;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--b1);border-radius:40px;padding:8px 16px;transition:border-color .2s" id="dash-search-wrap">
+      <i class="fa-solid fa-magnifying-glass" style="color:var(--t3);font-size:14px"></i>
+      <input id="dash-search" type="text" placeholder="Поиск уроков, сессий..." oninput="dashSearch(this.value)" style="flex:1;background:none;border:none;outline:none;color:var(--t1);font-family:var(--f);font-size:13px">
+    </div>
+    <div class="topbar-right">
+      <span class="live" data-t="live_label">Симулятор активен</span>
+      <div class="lang-select">
+        <button class="lang-btn active" data-lang="ru" onclick="applyLang('ru')">RU</button>
+        <button class="lang-btn" data-lang="kz" onclick="applyLang('kz')">KZ</button>
+        <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
+      </div>
+      <button class="ctrl-btn" id="theme-btn" onclick="toggleTheme()">☀️ Светлая</button>
+      <a href="session.html" class="btn btn-primary"><i class="fa-solid fa-play"></i><span data-t="btn_start_session">Начать сессию</span></a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- WELCOME -->
+    <div class="welcome-card fade">
+      <div>
+        <div class="w-name"><span data-t="dash_welcome">Привет</span>, Зияда 👋</div>
+        <div class="w-level">
+          <span class="lv lv-i">Intermediate</span>
+          <span style="font-size:13px;color:var(--t3)">1 240 XP</span>
+        </div>
+        <div class="w-xp-wrap">
+          <div class="w-xp-labels"><span>1 240 XP</span><span>1 500 → Advanced</span></div>
+          <div class="bar-wrap"><div class="bar bar-c" style="width:83%"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="w-rank">#3</div>
+        <div class="w-rank-lbl">из 24 студентов</div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid fade d1">
+      <div class="scard" style="--ac:var(--cyan)">
+        <div class="scard-icon"><i class="fa-solid fa-vials"></i></div>
+        <div class="scard-val mono">12</div>
+        <div class="scard-label" data-t="dash_sessions" data-tip="Всего завершённых тренировочных сессий">Всего сессий</div>
+        <div class="scard-trend trend-up"><i class="fa-solid fa-arrow-up"></i> +3 этот месяц</div>
+      </div>
+      <div class="scard" style="--ac:var(--green)">
+        <div class="scard-icon"><i class="fa-solid fa-star"></i></div>
+        <div class="scard-val mono">82.4</div>
+        <div class="scard-label" data-t="dash_avg" data-tip="Средний OSATS-балл по всем сессиям (макс. 100)">Средний балл</div>
+        <div class="scard-trend trend-up"><i class="fa-solid fa-arrow-up"></i> +4.2</div>
+      </div>
+      <div class="scard" style="--ac:var(--red)">
+        <div class="scard-icon"><i class="fa-solid fa-trophy"></i></div>
+        <div class="scard-val mono">94.0</div>
+        <div class="scard-label" data-t="dash_best">Лучший результат</div>
+        <div class="scard-trend trend-up">↑ личный рекорд</div>
+      </div>
+      <div class="scard" style="--ac:var(--purple)">
+        <div class="scard-icon"><i class="fa-solid fa-medal"></i></div>
+        <div class="scard-val mono">6</div>
+        <div class="scard-label" data-t="dash_achievements">Достижений</div>
+        <div class="scard-trend trend-up">+2 новых</div>
+      </div>
+    </div>
+
+    <!-- PROGRESS + AI TIP -->
+    <div class="g2 mb22 fade d2">
+      <div class="card">
+        <div class="sec-hd"><i class="fa-solid fa-chart-line cc"></i><span data-t="dash_progress">Прогресс</span></div>
+        <div style="position:relative;height:170px;width:100%"><canvas id="progressChart"></canvas></div>
+      </div>
+      <div class="ai-tip">
+        <div class="ai-tip-head">
+          <div class="ai-tip-ico">🤖</div>
+          <div>
+            <div class="ai-tip-title" data-t="dash_ai_tip">Рекомендация ИИ</div>
+            <div class="ai-tip-sub">На основе 12 сессий</div>
+          </div>
+        </div>
+        <div class="ai-tip-text">
+          Главное слабое место — <strong>равномерность стежков</strong> (среднее 68%). Рекомендуем 3–5 сессий в режиме <strong>Ordinary на модуле 6мм</strong> с фокусом на технике без спешки. Скорость выросла на 18% — отличная динамика.
+        </div>
+        <div class="mt8">
+          <span class="weak-tag"><i class="fa-solid fa-triangle-exclamation"></i> Равномерность</span>
+          <span class="weak-tag"><i class="fa-solid fa-triangle-exclamation"></i> Дистальная зона</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO LESSONS -->
+    <div class="card mb22 fade d2">
+      <div class="fb mb16">
+        <div class="sec-hd mb0"><i class="fa-solid fa-play-circle cc"></i><span data-t="dash_lessons">Видеоуроки</span></div>
+        <div class="fc gap8">
+          <button class="ctrl-btn" onclick="scrollRow('lessons',-1)" style="padding:5px 10px">‹</button>
+          <button class="ctrl-btn" onclick="scrollRow('lessons',1)" style="padding:5px 10px">›</button>
+          <a href="lessons.html" class="btn btn-ghost btn-sm"><span data-t="btn_all">Все</span> <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="lesson-scroll" id="lessons">
+        <!-- Lesson 1 -->
+        <div class="lesson-card">
+          <div class="lesson-thumb lt1">
+            🫀
+            <div class="lesson-play"><i class="fa-solid fa-play"></i></div>
+            <div class="lesson-progress"><div class="lesson-progress-fill" style="width:100%"></div></div>
+          </div>
+          <div class="lesson-body">
+            <div class="lesson-cat">Анатомия</div>
+            <div class="lesson-name" data-t="les_anatomy">Анатомия сосудов</div>
+            <div class="lesson-meta">
+              <span><i class="fa-solid fa-clock"></i> 18 <span data-t="les_min">мин</span></span>
+              <span class="badge-g" style="background:rgba(0,224,150,.1);color:var(--green);padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">✓ Пройдено</span>
+            </div>
+          </div>
+        </div>
+        <!-- Lesson 2 -->
+        <div class="lesson-card">
+          <div class="lesson-thumb lt2">
+            🧵
+            <div class="lesson-play"><i class="fa-solid fa-play"></i></div>
+            <div class="lesson-progress"><div class="lesson-progress-fill" style="width:65%"></div></div>
+          </div>
+          <div class="lesson-body">
+            <div class="lesson-cat" style="color:var(--purple)">Техника</div>
+            <div class="lesson-name" data-t="les_suture">Техника анастомоза</div>
+            <div class="lesson-meta">
+              <span><i class="fa-solid fa-clock"></i> 34 <span data-t="les_min">мин</span></span>
+              <span style="background:rgba(245,158,11,.1);color:var(--purple);padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">65%</span>
+            </div>
+          </div>
+        </div>
+        <!-- Lesson 3 -->
+        <div class="lesson-card">
+          <div class="lesson-thumb lt3">
+            📊
+            <div class="lesson-play"><i class="fa-solid fa-play"></i></div>
+            <div class="lesson-progress"><div class="lesson-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="lesson-body">
+            <div class="lesson-cat" style="color:var(--green)">Физиология</div>
+            <div class="lesson-name" data-t="les_pressure">Гемодинамика</div>
+            <div class="lesson-meta">
+              <span><i class="fa-solid fa-clock"></i> 22 <span data-t="les_min">мин</span></span>
+              <span style="color:var(--t4);font-size:10px">Не начато</span>
+            </div>
+          </div>
+        </div>
+        <!-- Lesson 4 -->
+        <div class="lesson-card">
+          <div class="lesson-thumb lt4">
+            🤖
+            <div class="lesson-play"><i class="fa-solid fa-play"></i></div>
+            <div class="lesson-progress"><div class="lesson-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="lesson-body">
+            <div class="lesson-cat" style="color:var(--yellow)">ИИ-система</div>
+            <div class="lesson-name" data-t="les_ai">ИИ-оценка шва</div>
+            <div class="lesson-meta">
+              <span><i class="fa-solid fa-clock"></i> 15 <span data-t="les_min">мин</span></span>
+              <span style="color:var(--t4);font-size:10px">Не начато</span>
+            </div>
+          </div>
+        </div>
+        <!-- Lesson 5 -->
+        <div class="lesson-card">
+          <div class="lesson-thumb" style="background:linear-gradient(135deg,#1a1c0c,#282a14)">
+            🔬
+            <div class="lesson-play"><i class="fa-solid fa-play"></i></div>
+            <div class="lesson-progress"><div class="lesson-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="lesson-body">
+            <div class="lesson-cat" style="color:var(--orange)">Продвинутый</div>
+            <div class="lesson-name">Ошибки и осложнения</div>
+            <div class="lesson-meta">
+              <span><i class="fa-solid fa-clock"></i> 28 <span data-t="les_min">мин</span></span>
+              <span style="color:var(--t4);font-size:10px">Заблокировано 🔒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT SESSIONS (horizontal scroll) -->
+    <div class="card mb22 fade d3">
+      <div class="fb mb16">
+        <div class="sec-hd mb0"><i class="fa-solid fa-clock-rotate-left cc"></i><span data-t="dash_recent">Последние сессии</span></div>
+        <div class="fc gap8">
+          <button class="ctrl-btn" onclick="scrollRow('history',-1)" style="padding:5px 10px">‹</button>
+          <button class="ctrl-btn" onclick="scrollRow('history',1)" style="padding:5px 10px">›</button>
+          <a href="results.html" class="btn btn-ghost btn-sm"><span data-t="dash_history">История</span> <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="history-scroll" id="history">
+        <!-- Session cards -->
+        <div class="hcard" onclick="window.location.href='results.html'">
+          <div class="hcard-top">
+            <div class="hcard-score hs-g">94</div>
+            <div class="hcard-date">12.05<br>14:22</div>
+          </div>
+          <div class="hcard-mode"><span class="badge badge-r">Adrenalin</span></div>
+          <div class="hcard-vessel">🔴 4mm · 3:48 мин</div>
+          <div class="hcard-bar">
+            <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cg">4.6/5</span></div>
+            <div class="bar-wrap"><div class="bar bar-g" style="width:92%"></div></div>
+          </div>
+        </div>
+        <div class="hcard" onclick="window.location.href='results.html'">
+          <div class="hcard-top">
+            <div class="hcard-score hs-y">79</div>
+            <div class="hcard-date">09.05<br>11:05</div>
+          </div>
+          <div class="hcard-mode"><span class="badge badge-c">Ordinary</span></div>
+          <div class="hcard-vessel">🟠 6mm · 4:12 мин</div>
+          <div class="hcard-bar">
+            <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cy">3.8/5</span></div>
+            <div class="bar-wrap"><div class="bar bar-y" style="width:76%"></div></div>
+          </div>
+        </div>
+        <div class="hcard" onclick="window.location.href='results.html'">
+          <div class="hcard-top">
+            <div class="hcard-score hs-y">72</div>
+            <div class="hcard-date">06.05<br>16:40</div>
+          </div>
+          <div class="hcard-mode"><span class="badge badge-c">Ordinary</span></div>
+          <div class="hcard-vessel">🟠 6mm · 5:03 мин</div>
+          <div class="hcard-bar">
+            <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cy">3.5/5</span></div>
+            <div class="bar-wrap"><div class="bar bar-y" style="width:70%"></div></div>
+          </div>
+        </div>
+        <div class="hcard" onclick="window.location.href='results.html'">
+          <div class="hcard-top">
+            <div class="hcard-score hs-r">58</div>
+            <div class="hcard-date">02.05<br>09:15</div>
+          </div>
+          <div class="hcard-mode"><span class="badge badge-c">Ordinary</span></div>
+          <div class="hcard-vessel">🟢 10mm · 6:22 мин</div>
+          <div class="hcard-bar">
+            <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cr">2.8/5</span></div>
+            <div class="bar-wrap"><div class="bar bar-r" style="width:56%"></div></div>
+          </div>
+        </div>
+        <div class="hcard" onclick="window.location.href='results.html'">
+          <div class="hcard-top">
+            <div class="hcard-score hs-r">61</div>
+            <div class="hcard-date">28.04<br>14:00</div>
+          </div>
+          <div class="hcard-mode"><span class="badge badge-c">Ordinary</span></div>
+          <div class="hcard-vessel">🟢 10mm · 5:55 мин</div>
+          <div class="hcard-bar">
+            <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cr">3.0/5</span></div>
+            <div class="bar-wrap"><div class="bar bar-r" style="width:60%"></div></div>
+          </div>
+        </div>
+        <div class="hcard" style="border-style:dashed;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="window.location.href='results.html'">
+          <div style="text-align:center;color:var(--t3)">
+            <div style="font-size:28px;margin-bottom:8px">📋</div>
+            <div style="font-size:12px;font-weight:600">Вся история</div>
+            <div style="font-size:11px;margin-top:4px">12 сессий →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="card fade d4">
+      <div class="fb mb16">
+        <div class="sec-hd mb0"><i class="fa-solid fa-star cy"></i><span data-t="dash_ach_title">Достижения</span></div>
+        <button class="btn btn-ghost btn-sm"><span data-t="btn_all">Все</span> <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+      <div class="ach-grid">
+        <div class="ach-card earned"><div class="ach-em">🩺</div><div class="ach-name">Первый надрез</div><div class="ach-desc">Первая сессия</div></div>
+        <div class="ach-card earned"><div class="ach-em">💎</div><div class="ach-name">Без утечек</div><div class="ach-desc">Leak &lt; 0.2</div></div>
+        <div class="ach-card earned"><div class="ach-em">⚡</div><div class="ach-name">Молния</div><div class="ach-desc">Быстрее 3 мин</div></div>
+        <div class="ach-card earned"><div class="ach-em">🔬</div><div class="ach-name">Исследователь</div><div class="ach-desc">Оба режима</div></div>
+        <div class="ach-card earned"><div class="ach-em">🔥</div><div class="ach-name">Серия</div><div class="ach-desc">5 сессий подряд</div></div>
+        <div class="ach-card locked"><div class="ach-em">⭐</div><div class="ach-name">Идеальный шов</div><div class="ach-desc">OSATS 5.0</div></div>
+        <div class="ach-card locked"><div class="ach-em">💯</div><div class="ach-name">Перфекционист</div><div class="ach-desc">100/100 баллов</div></div>
+        <div class="ach-card locked"><div class="ach-em">💪</div><div class="ach-name">Марафонец</div><div class="ach-desc">20 сессий</div></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+/* ═══════════════════════════════════
+   base.js — AngioSim shared logic
+   Theme toggle + Language system
+   ═══════════════════════════════════ */
+
+// ── TRANSLATIONS ─────────────────────────────────────────────────
+const LANG = {
+  ru: {
+    // nav
+    nav_dashboard:    'Главная',
+    nav_session:      'Новая сессия',
+    nav_results:      'Результаты',
+    nav_leaderboard:  'Рейтинг',
+    nav_profile:      'Мой профиль',
+    nav_teacher:      'Преподаватель',
+  
+  /* ── NAVIGATION EXTRAS ── */
+  nav_lessons:         'Уроки',
+
+  /* ── LESSONS PAGE ── */
+  lessons_title:       'Видеоуроки',
+  lessons_sub:         'Теория и техника сосудистой хирургии',
+  filter_all:          '🎯 Все',
+  filter_basics:       '📖 Основы',
+  filter_technique:    '🔬 Техника',
+  filter_sim:          '🤖 Симулятор',
+  filter_ai:           '🧠 ИИ-анализ',
+  filter_done:         '✅ Пройденные',
+  search_lessons:      'Поиск уроков...',
+
+  /* ── PROFILE PAGE ── */
+  profile_title:       'Мой профиль',
+  profile_sub:         'Прогресс, достижения, настройки',
+  profile_sessions:    'Сессий',
+  profile_avg:         'Средний балл',
+  profile_badges:      'Значков',
+  profile_skills:      'Навыки',
+  profile_recent:      'Последние сессии',
+  profile_achievements:'Достижения',
+  profile_settings:    'Настройки',
+  profile_all_history: 'Вся история',
+  set_theme:           'Тёмная тема',
+  set_theme_d:         'Переключить между тёмным и светлым режимом',
+  set_notif:           'Уведомления',
+  set_notif_d:         'Напоминания о тренировках и новых уроках',
+  set_sound:           'Звуковые сигналы',
+  set_sound_d:         'Звук при завершении сессии и достижении',
+  set_lang:            'Язык интерфейса',
+  set_lang_d:          'Выберите язык платформы',
+  set_export:          'Экспорт данных',
+  set_export_d:        'Скачать все сессии и результаты в PDF',
+  set_reset:           'Сбросить прогресс',
+  set_reset_d:         'Удалить все сессии и начать заново',
+    nav_logout:       'Выйти',
+    // topbar
+    theme_dark:  '🌙 Тёмная',
+    theme_light: '☀️ Светлая',
+    // common
+    btn_start_session: '▶ Начать сессию',
+    btn_view: 'Открыть',
+    btn_all: 'Все',
+    live_label: 'Симулятор активен',
+    // login
+    login_welcome: 'Добро пожаловать',
+    login_sub: 'Войдите или создайте аккаунт',
+    login_tab: 'Вход',
+    reg_tab: 'Регистрация',
+    login_email: 'Email',
+    login_pass: 'Пароль',
+    login_btn: 'Войти',
+    demo_btn: 'Демо — войти как студент',
+    reg_name: 'Имя и фамилия',
+    reg_uni: 'Университет',
+    reg_role: 'Роль',
+    role_student: 'Студент',
+    role_teacher: 'Преподаватель',
+    role_student_desc: 'Тренировки и прогресс',
+    role_teacher_desc: 'Мониторинг студентов',
+    reg_btn: 'Создать аккаунт',
+    // dashboard
+    dash_title: 'Главная',
+    dash_sub: 'Добро пожаловать обратно',
+    dash_welcome: 'Привет',
+    dash_sessions: 'Всего сессий',
+    dash_avg: 'Средний балл',
+    dash_best: 'Лучший результат',
+    dash_achievements: 'Достижений',
+    dash_progress: 'Прогресс',
+    dash_ai_tip: 'Рекомендация ИИ',
+    dash_lessons: 'Видеоуроки',
+    dash_recent: 'Последние сессии',
+    dash_history: 'История',
+    dash_ach_title: 'Достижения',
+    // sessions table headers
+    th_date: 'Дата',
+    th_mode: 'Режим',
+    th_vessel: 'Сосуд',
+    th_osats: 'OSATS',
+    th_leak: 'Утечка',
+    th_time: 'Время',
+    th_score: 'Итог',
+    // lessons
+    les_anatomy: 'Анатомия сосудов',
+    les_anatomy_desc: 'Базовый курс: строение артерий и вен',
+    les_suture: 'Техника анастомоза',
+    les_suture_desc: 'Пошаговое руководство по сосудистому шву',
+    les_pressure: 'Гемодинамика',
+    les_pressure_desc: 'Давление, поток и клинические нормы',
+    les_ai: 'ИИ-оценка шва',
+    les_ai_desc: 'Как читать результаты AngioSim AI',
+    les_min: 'мин',
+    les_watch: 'Смотреть',
+    // session
+    sess_title: 'Сессия',
+    sess_sensors: 'Датчики',
+    sess_bpm: 'Частота пульса',
+    sess_flow: 'Поток',
+    sess_press: 'Давление',
+    sess_leak: 'Утечка',
+    sess_time: 'Время',
+    sess_camera: 'Зона анализа шва',
+    sess_capture: 'Сфотографировать шов',
+    sess_upload: 'Загрузить',
+    sess_ai: 'ИИ-анализ',
+    sess_notes: 'Заметки',
+    sess_end: 'Завершить сессию',
+    sess_mode: 'Режим',
+    sess_cam_hint: 'Нажми для анализа шва',
+    sess_cam_sub: 'ИИ оценит качество анастомоза',
+    sess_analyzing: 'ИИ анализирует шов...',
+    sess_ai_empty: 'Сфотографируй анастомоз для оценки',
+    sess_stitches: 'Стежков',
+    sess_uniformity: 'Равномерность',
+    // results
+    res_title: 'Результаты',
+    res_grade_ex: 'Отлично',
+    res_grade_gd: 'Хорошо',
+    res_grade_ok: 'Удовлетворительно',
+    res_grade_bd: 'Требует доработки',
+    res_breakdown: 'Разбивка оценки',
+    res_ai: 'Анализ ИИ',
+    res_strong: 'Сильные стороны',
+    res_weak: 'Для улучшения',
+    res_teacher_fb: 'Фидбек преподавателя',
+    res_prev: 'Предыдущая сессия',
+    // leaderboard
+    lb_title: 'Рейтинг',
+    lb_sub: 'Лучшие хирурги платформы',
+    lb_score: '🏆 Лучший балл',
+    lb_xp: '📈 XP Прогресс',
+    lb_active: '⚡ Активность',
+    lb_student: 'Студент',
+    lb_uni: 'Университет',
+    lb_level: 'Уровень',
+    lb_avg: 'Средний балл',
+    lb_trend: 'Тренд',
+    // teacher
+    tea_title: 'Панель преподавателя',
+    tea_students: 'Студентов',
+    tea_sessions: 'Сессий всего',
+    tea_avg: 'Средний балл группы',
+    tea_attention: 'Требуют внимания',
+    tea_all_students: 'Все студенты',
+    tea_group_progress: 'Прогресс группы',
+  },
+
+  kz: {
+    nav_dashboard:    'Басты бет',
+    nav_session:      'Жаңа сессия',
+    nav_results:      'Нәтижелер',
+    nav_leaderboard:  'Рейтинг',
+    nav_profile:      'Менің профилім',
+    nav_teacher:      'Оқытушы',
+  
+  nav_lessons:         'Сабақтар',
+  lessons_title:       'Бейне сабақтар',
+  lessons_sub:         'Тамырлық хирургияның теориясы мен техникасы',
+  filter_all:          '🎯 Барлығы',
+  filter_basics:       '📖 Негіздер',
+  filter_technique:    '🔬 Техника',
+  filter_sim:          '🤖 Симулятор',
+  filter_ai:           '🧠 ЖИ-талдау',
+  filter_done:         '✅ Аяқталған',
+  search_lessons:      'Сабақтарды іздеу...',
+  profile_title:       'Менің профилім',
+  profile_sub:         'Прогресс, жетістіктер, параметрлер',
+  profile_sessions:    'Сессиялар',
+  profile_avg:         'Орташа балл',
+  profile_badges:      'Белгілер',
+  profile_skills:      'Дағдылар',
+  profile_recent:      'Соңғы сессиялар',
+  profile_achievements:'Жетістіктер',
+  profile_settings:    'Параметрлер',
+  profile_all_history: 'Барлық тарих',
+  set_theme:           'Күңгірт тақырып',
+  set_theme_d:         'Күңгірт және жарық режим арасында ауысу',
+  set_notif:           'Хабарландырулар',
+  set_notif_d:         'Жаттығулар мен жаңа сабақтар туралы еске салу',
+  set_sound:           'Дыбыстық сигналдар',
+  set_sound_d:         'Сессия аяқталғанда және жетістік алғанда дыбыс',
+  set_lang:            'Интерфейс тілі',
+  set_lang_d:          'Платформа тілін таңдаңыз',
+  set_export:          'Деректерді экспорттау',
+  set_export_d:        'Барлық сессияларды PDF форматында жүктеу',
+  set_reset:           'Прогресті қалпына келтіру',
+  set_reset_d:         'Барлық сессияларды жою және қайта бастау',
+    nav_logout:       'Шығу',
+    theme_dark:  '🌙 Қараңғы',
+    theme_light: '☀️ Ашық',
+    btn_start_session: '▶ Сессия бастау',
+    btn_view: 'Ашу',
+    btn_all: 'Барлығы',
+    live_label: 'Симулятор белсенді',
+    login_welcome: 'Қош келдіңіз',
+    login_sub: 'Кіріңіз немесе тіркеліңіз',
+    login_tab: 'Кіру',
+    reg_tab: 'Тіркелу',
+    login_email: 'Email',
+    login_pass: 'Құпия сөз',
+    login_btn: 'Кіру',
+    demo_btn: 'Демо — студент ретінде кіру',
+    reg_name: 'Аты-жөні',
+    reg_uni: 'Университет',
+    reg_role: 'Рөл',
+    role_student: 'Студент',
+    role_teacher: 'Оқытушы',
+    role_student_desc: 'Жаттығу және прогресс',
+    role_teacher_desc: 'Студенттерді бақылау',
+    reg_btn: 'Тіркелу',
+    dash_title: 'Басты бет',
+    dash_sub: 'Қайта оралуыңызбен',
+    dash_welcome: 'Сәлем',
+    dash_sessions: 'Барлық сессиялар',
+    dash_avg: 'Орташа балл',
+    dash_best: 'Үздік нәтиже',
+    dash_achievements: 'Жетістіктер',
+    dash_progress: 'Прогресс',
+    dash_ai_tip: 'ЖИ ұсынысы',
+    dash_lessons: 'Бейне сабақтар',
+    dash_recent: 'Соңғы сессиялар',
+    dash_history: 'Тарих',
+    dash_ach_title: 'Жетістіктер',
+    th_date:'Күні',th_mode:'Режим',th_vessel:'Тамыр',th_osats:'OSATS',th_leak:'Ағып кету',th_time:'Уақыт',th_score:'Нәтиже',
+    les_anatomy:'Тамыр анатомиясы',les_anatomy_desc:'Негізгі курс: артерия және вена құрылымы',
+    les_suture:'Анастомоз техникасы',les_suture_desc:'Тамырлық тігіске қадамдық нұсқаулық',
+    les_pressure:'Гемодинамика',les_pressure_desc:'Қысым, ағын және клиникалық нормалар',
+    les_ai:'ЖИ тігіс бағасы',les_ai_desc:'AngioSim AI нәтижелерін қалай оқуға болады',
+    les_min:'мин',les_watch:'Қарау',
+    sess_title:'Сессия',sess_sensors:'Датчиктер',sess_bpm:'Жүрек соғысы жиілігі',
+    sess_flow:'Ағын',sess_press:'Қысым',sess_leak:'Ағып кету',sess_time:'Уақыт',
+    sess_camera:'Тігіс талдау аймағы',sess_capture:'Тігісті суретке түсіру',
+    sess_upload:'Жүктеу',sess_ai:'ЖИ-талдау',sess_notes:'Жазбалар',
+    sess_end:'Сессияны аяқтау',sess_mode:'Режим',
+    sess_cam_hint:'Талдау үшін басыңыз',sess_cam_sub:'ЖИ анастомоз сапасын бағалайды',
+    sess_analyzing:'ЖИ тігісті талдап жатыр...',sess_ai_empty:'Бағалау үшін анастомозды суретке түсіріңіз',
+    sess_stitches:'Тігістер',sess_uniformity:'Біркелкілік',
+    res_title:'Нәтижелер',res_grade_ex:'Өте жақсы',res_grade_gd:'Жақсы',
+    res_grade_ok:'Қанағаттанарлық',res_grade_bd:'Жетілдіру қажет',
+    res_breakdown:'Баллдың бөлінуі',res_ai:'ЖИ талдауы',
+    res_strong:'Күшті жақтары',res_weak:'Жақсарту үшін',res_teacher_fb:'Оқытушы пікірі',res_prev:'Алдыңғы сессия',
+    lb_title:'Рейтинг',lb_sub:'Платформаның үздік хирургтары',
+    lb_score:'🏆 Үздік балл',lb_xp:'📈 XP Прогресс',lb_active:'⚡ Белсенділік',
+    lb_student:'Студент',lb_uni:'Университет',lb_level:'Деңгей',lb_avg:'Орташа балл',lb_trend:'Үрдіс',
+    tea_title:'Оқытушы тақтасы',tea_students:'Студенттер',tea_sessions:'Барлық сессиялар',
+    tea_avg:'Топтың орташа баллы',tea_attention:'Назар аудару қажет',
+    tea_all_students:'Барлық студенттер',tea_group_progress:'Топ прогресі',
+  },
+
+  en: {
+    nav_dashboard:    'Dashboard',
+    nav_session:      'New Session',
+    nav_results:      'Results',
+    nav_leaderboard:  'Leaderboard',
+    nav_profile:      'My Profile',
+    nav_teacher:      'Teacher',
+  
+  nav_lessons:         'Lessons',
+  lessons_title:       'Video Lessons',
+  lessons_sub:         'Theory and technique of vascular surgery',
+  filter_all:          '🎯 All',
+  filter_basics:       '📖 Basics',
+  filter_technique:    '🔬 Technique',
+  filter_sim:          '🤖 Simulator',
+  filter_ai:           '🧠 AI Analysis',
+  filter_done:         '✅ Completed',
+  search_lessons:      'Search lessons...',
+  profile_title:       'My Profile',
+  profile_sub:         'Progress, achievements, settings',
+  profile_sessions:    'Sessions',
+  profile_avg:         'Average Score',
+  profile_badges:      'Badges',
+  profile_skills:      'Skills',
+  profile_recent:      'Recent Sessions',
+  profile_achievements:'Achievements',
+  profile_settings:    'Settings',
+  profile_all_history: 'Full History',
+  set_theme:           'Dark Theme',
+  set_theme_d:         'Switch between dark and light mode',
+  set_notif:           'Notifications',
+  set_notif_d:         'Reminders about training and new lessons',
+  set_sound:           'Sound Alerts',
+  set_sound_d:         'Sound on session end and new achievement',
+  set_lang:            'Interface Language',
+  set_lang_d:          'Choose platform language',
+  set_export:          'Export Data',
+  set_export_d:        'Download all sessions and results as PDF',
+  set_reset:           'Reset Progress',
+  set_reset_d:         'Delete all sessions and start over',
+    nav_logout:       'Log Out',
+    theme_dark:  '🌙 Dark',
+    theme_light: '☀️ Light',
+    btn_start_session: '▶ Start Session',
+    btn_view: 'Open',
+    btn_all: 'All',
+    live_label: 'Simulator Active',
+    login_welcome: 'Welcome',
+    login_sub: 'Sign in or create an account',
+    login_tab: 'Sign In',
+    reg_tab: 'Register',
+    login_email: 'Email',
+    login_pass: 'Password',
+    login_btn: 'Sign In',
+    demo_btn: 'Demo — enter as student',
+    reg_name: 'Full Name',
+    reg_uni: 'University',
+    reg_role: 'Role',
+    role_student: 'Student',
+    role_teacher: 'Teacher',
+    role_student_desc: 'Training & progress',
+    role_teacher_desc: 'Monitor students',
+    reg_btn: 'Create Account',
+    dash_title: 'Dashboard',
+    dash_sub: 'Welcome back',
+    dash_welcome: 'Hello',
+    dash_sessions: 'Total Sessions',
+    dash_avg: 'Average Score',
+    dash_best: 'Best Result',
+    dash_achievements: 'Achievements',
+    dash_progress: 'Progress',
+    dash_ai_tip: 'AI Recommendation',
+    dash_lessons: 'Video Lessons',
+    dash_recent: 'Recent Sessions',
+    dash_history: 'History',
+    dash_ach_title: 'Achievements',
+    th_date:'Date',th_mode:'Mode',th_vessel:'Vessel',th_osats:'OSATS',th_leak:'Leak',th_time:'Time',th_score:'Score',
+    les_anatomy:'Vascular Anatomy',les_anatomy_desc:'Basic course: artery and vein structure',
+    les_suture:'Anastomosis Technique',les_suture_desc:'Step-by-step vascular suture guide',
+    les_pressure:'Hemodynamics',les_pressure_desc:'Pressure, flow and clinical norms',
+    les_ai:'AI Suture Assessment',les_ai_desc:'How to read AngioSim AI results',
+    les_min:'min',les_watch:'Watch',
+    sess_title:'Session',sess_sensors:'Sensors',sess_bpm:'Heart Rate',
+    sess_flow:'Flow',sess_press:'Pressure',sess_leak:'Leak',sess_time:'Time',
+    sess_camera:'Suture Analysis Zone',sess_capture:'Photograph Suture',
+    sess_upload:'Upload',sess_ai:'AI Analysis',sess_notes:'Notes',
+    sess_end:'End Session',sess_mode:'Mode',
+    sess_cam_hint:'Tap to analyze suture',sess_cam_sub:'AI will evaluate anastomosis quality',
+    sess_analyzing:'AI analyzing suture...',sess_ai_empty:'Photograph anastomosis for assessment',
+    sess_stitches:'Stitches',sess_uniformity:'Uniformity',
+    res_title:'Results',res_grade_ex:'Excellent',res_grade_gd:'Good',
+    res_grade_ok:'Satisfactory',res_grade_bd:'Needs Improvement',
+    res_breakdown:'Score Breakdown',res_ai:'AI Analysis',
+    res_strong:'Strengths',res_weak:'Areas to Improve',res_teacher_fb:'Teacher Feedback',res_prev:'Previous Session',
+    lb_title:'Leaderboard',lb_sub:'Top surgeons on the platform',
+    lb_score:'🏆 Best Score',lb_xp:'📈 XP Progress',lb_active:'⚡ Activity',
+    lb_student:'Student',lb_uni:'University',lb_level:'Level',lb_avg:'Avg Score',lb_trend:'Trend',
+    tea_title:'Teacher Dashboard',tea_students:'Students',tea_sessions:'Total Sessions',
+    tea_avg:'Group Average Score',tea_attention:'Need Attention',
+    tea_all_students:'All Students',tea_group_progress:'Group Progress',
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────
+let currentLang = localStorage.getItem('as_lang') || 'ru';
+let currentTheme = localStorage.getItem('as_theme') || 'dark';
+
+// ── APPLY THEME ───────────────────────────────────────────────────
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('as_theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = LANG[currentLang][theme === 'dark' ? 'theme_light' : 'theme_dark'];
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+// ── APPLY LANGUAGE ────────────────────────────────────────────────
+function applyLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('as_lang', lang);
+
+  // update all [data-t] elements
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (LANG[lang][key] !== undefined) el.textContent = LANG[lang][key];
+  });
+
+  // update placeholder [data-tp]
+  document.querySelectorAll('[data-tp]').forEach(el => {
+    const key = el.getAttribute('data-tp');
+    if (LANG[lang][key] !== undefined) el.placeholder = LANG[lang][key];
+  });
+
+  // highlight active lang button
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+
+  // update theme btn label
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = LANG[lang][currentTheme === 'dark' ? 'theme_light' : 'theme_dark'];
+}
+
+// ── SIDEBAR ACTIVE STATE ──────────────────────────────────────────
+function setActiveNav() {
+  const page = document.body.dataset.page;
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(currentTheme);
+  applyLang(currentLang);
+  setActiveNav();
+});
+
+// T helper for JS-generated text
+function t(key) {
+  return LANG[currentLang][key] || key;
+}
+
+
+/* ══════════════════════════════════════
+   #9  RIPPLE on all .btn clicks
+══════════════════════════════════════ */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(e.clientX-rect.left-size/2)+'px;top:'+(e.clientY-rect.top-size/2)+'px';
+  btn.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 560);
+});
+
+/* ══════════════════════════════════════
+   #5  SKELETON on stat cards (dashboard/teacher)
+══════════════════════════════════════ */
+(function(){
+  const scards = document.querySelectorAll('.scard');
+  if (!scards.length) return;
+  scards.forEach(function(c){ c.classList.add('sk-active'); });
+  setTimeout(function(){
+    scards.forEach(function(c){
+      c.classList.remove('sk-active');
+      c.style.transition = 'opacity .4s';
+    });
+  }, 900);
+})();
+
+</script>
+<script>
+const ctx = document.getElementById('progressChart').getContext('2d');
+const grad = ctx.createLinearGradient(0,0,0,170);
+grad.addColorStop(0,'rgba(0,217,245,.25)'); grad.addColorStop(1,'rgba(0,217,245,0)');
+new Chart(ctx, {
+  type:'line',
+  data:{
+    labels:['С1','С2','С3','С4','С5','С6','С7','С8','С9','С10','С11','С12'],
+    datasets:[{
+      data:[58,61,65,63,69,71,75,74,79,82,79,94],
+      borderColor:'#00d9f5', backgroundColor:grad,
+      borderWidth:2, pointBackgroundColor:'#00d9f5',
+      pointRadius:4, tension:.4, fill:true
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#111d2e',borderColor:'#1c2e48',borderWidth:1,titleColor:'#eef2ff',bodyColor:'#7d93b4'}},
+    scales:{
+      x:{grid:{color:'#1c2e48'},ticks:{color:'#3d5475',font:{size:10}}},
+      y:{grid:{color:'#1c2e48'},ticks:{color:'#3d5475',font:{size:10}},min:0,max:100}
+    }
+  }
+});
+
+function dashSearch(q) {
+  q = q.toLowerCase();
+  const wrap = document.getElementById('dash-search-wrap');
+  wrap.style.borderColor = q ? 'var(--cyan)' : 'var(--b1)';
+  // Highlight lesson cards matching query
+  document.querySelectorAll('.lesson-card').forEach(card => {
+    const title = card.querySelector('.lc-title') ? card.querySelector('.lc-title').textContent.toLowerCase() : '';
+    if (!q || title.includes(q)) card.style.opacity = '1';
+    else card.style.opacity = '0.35';
+  });
+}
+function scrollRow(id, dir) {
+  const el = document.getElementById(id);
+  el.scrollBy({ left: dir * 260, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

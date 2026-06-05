@@ -1,0 +1,22 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Future frontend/backend dependencies
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+!.env.example

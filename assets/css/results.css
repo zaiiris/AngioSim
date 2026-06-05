@@ -1,0 +1,102 @@
+.hero-result {
+  background: linear-gradient(135deg, rgba(52,211,153,.05), rgba(245,158,11,.05));
+  border: 1px solid rgba(0,217,245,.13);
+  border-radius: var(--r3); padding: 36px;
+  margin-bottom: 22px; text-align: center;
+  position: relative; overflow: hidden;
+}
+
+.hero-result::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 250px; height: 250px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(52,211,153,.07), transparent 70%);
+}
+
+.big-score {
+  font-family: var(--m); font-size: 88px; font-weight: 800;
+  line-height: 1; letter-spacing: -2px;
+}
+
+.big-score.s-ex { color: var(--green); }
+
+.big-score.s-gd { color: var(--cyan); }
+
+.big-score.s-ok { color: var(--yellow); }
+
+.big-score.s-bd { color: var(--red); }
+
+.score-denom { font-size: 28px; color: var(--t3); }
+
+.grade-label { font-size: 22px; font-weight: 800; margin: 8px 0 6px; }
+
+.xp-gained {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,214,10,.1); border: 1px solid rgba(255,214,10,.2);
+  border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 700; color: var(--yellow);
+  margin-bottom: 20px;
+}
+
+.metrics-row {
+  display: flex; justify-content: center; gap: 28px; flex-wrap: wrap;
+}
+
+.metric-item { text-align: center; }
+
+.metric-em { font-size: 22px; margin-bottom: 5px; }
+
+.metric-val { font-family: var(--m); font-size: 18px; font-weight: 700; line-height: 1; }
+
+.metric-unit { font-size: 11px; color: var(--t3); margin-left: 2px; }
+
+.metric-lbl { font-size: 11px; color: var(--t3); margin-top: 3px; }
+
+.br-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--b1);
+}
+
+.br-row:last-child { border-bottom: none; }
+
+.br-label { min-width: 170px; }
+
+.br-name { font-size: 13px; color: var(--t2); }
+
+.br-weight { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+.br-bar { flex: 1; }
+
+.br-val { font-family: var(--m); font-size: 14px; font-weight: 700; min-width: 36px; text-align: right; }
+
+.strength-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 10px 13px; border-radius: var(--r);
+  font-size: 13px; line-height: 1.5; margin-bottom: 8px;
+}
+
+.si-good { background: rgba(0,224,150,.06); border: 1px solid rgba(0,224,150,.15); color: var(--green); }
+
+.si-bad  { background: rgba(255,45,85,.06);  border: 1px solid rgba(255,45,85,.15);  color: var(--red); }
+
+.teacher-fb {
+  background: var(--bg3); border-left: 3px solid var(--purple);
+  border-radius: var(--r); padding: 14px;
+}
+
+.tf-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+
+.tf-name { font-size: 13px; font-weight: 700; color: var(--purple); }
+
+.tf-date { font-size: 11px; color: var(--t3); font-family: var(--m); }
+
+.tf-text { font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+.comparison-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--b1); font-size: 13px;
+}
+
+.comparison-row:last-child { border-bottom: none; }
+
+.delta-up { color: var(--green); font-weight: 700; font-family: var(--m); }
+
+.delta-dn { color: var(--red); font-weight: 700; font-family: var(--m); }

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AngioSim — Рейтинг</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/leaderboard.css">
+</head>
+<body data-page="leaderboard">
+<aside class="sidebar">
+  <a href="index.html" class="sidebar-logo">AS</a>
+  <a href="dashboard.html" class="nav-item" data-page="dashboard"><i class="fa-solid fa-chart-line"></i><span class="nav-text" data-t="nav_dashboard">Главная</span></a>
+  <a href="session.html" class="nav-item" data-page="session"><i class="fa-solid fa-play"></i><span class="nav-text" data-t="nav_session">Новая сессия</span></a>
+  <a href="results.html" class="nav-item" data-page="results"><i class="fa-solid fa-clipboard-list"></i><span class="nav-text" data-t="nav_results">Результаты</span></a>
+  <a href="leaderboard.html" class="nav-item" data-page="leaderboard"><i class="fa-solid fa-trophy"></i><span class="nav-text" data-t="nav_leaderboard">Рейтинг</span></a>
+  <a href="profile.html" class="nav-item" data-page="profile"><i class="fa-solid fa-user"></i><span class="nav-text" data-t="nav_profile">Профиль</span></a>
+  <div class="sidebar-sep"></div>
+  <a href="teacher.html" class="nav-item" data-page="teacher"><i class="fa-solid fa-chalkboard-user"></i><span class="nav-text" data-t="nav_teacher">Преподаватель</span></a>
+  <div class="sidebar-bottom">
+    <a href="index.html" class="nav-item"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="nav-text" data-t="nav_logout">Выйти</span></a>
+  </div>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left"><h1 data-t="lb_title">Рейтинг</h1><p data-t="lb_sub">Лучшие хирурги платформы</p></div>
+    <div class="topbar-right">
+      <div class="lang-select">
+        <button class="lang-btn active" data-lang="ru" onclick="applyLang('ru')">RU</button>
+        <button class="lang-btn" data-lang="kz" onclick="applyLang('kz')">KZ</button>
+        <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
+      </div>
+      <button class="ctrl-btn" id="theme-btn" onclick="toggleTheme()">☀️ Светлая</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- PODIUM -->
+    <div class="podium fade">
+      <div class="podium-card p2">
+        <div class="podium-crown">🥈</div>
+        <div class="podium-av" style="background:rgba(245,158,11,.15);color:var(--purple)">Д</div>
+        <div class="podium-name">Данияр М.</div>
+        <div class="podium-uni">ЗКМУ</div>
+        <span class="lv lv-a">Advanced</span>
+        <div class="podium-score cp mt8">85.1</div>
+      </div>
+      <div class="podium-card p1" style="padding-top:28px">
+        <div class="podium-crown">🥇</div>
+        <div class="podium-av" style="background:rgba(255,214,10,.15);color:var(--yellow)">А</div>
+        <div class="podium-name">Айгерим А.</div>
+        <div class="podium-uni">NIS EMN Туркестан</div>
+        <span class="lv lv-e">Expert</span>
+        <div class="podium-score cy mt8">88.4</div>
+      </div>
+      <div class="podium-card p3">
+        <div class="podium-crown">🥉</div>
+        <div class="podium-av" style="background:rgba(52,211,153,.15);color:var(--cyan)">З</div>
+        <div class="podium-name">Зияда А. <span class="badge badge-c" style="font-size:9px">Ты</span></div>
+        <div class="podium-uni">NIS EMN Туркестан</div>
+        <span class="lv lv-i">Intermediate</span>
+        <div class="podium-score cc mt8">82.7</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs fade d1">
+      <button class="tab on" onclick="showTab('score',this)" data-t="lb_score">🏆 Лучший балл</button>
+      <button class="tab" onclick="showTab('xp',this)" data-t="lb_xp">📈 XP Прогресс</button>
+      <button class="tab" onclick="showTab('active',this)" data-t="lb_active">⚡ Активность</button>
+    </div>
+
+    <div class="tbl-wrap fade d1">
+      <table>
+        <thead><tr>
+          <th>#</th>
+          <th data-t="lb_student">Студент</th>
+          <th data-t="lb_uni">Университет</th>
+          <th data-t="lb_level">Уровень</th>
+          <th id="col-hd" data-t="lb_avg">Средний балл</th>
+          <th data-t="lb_trend">Тренд</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="rank-em">🥇</span></td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(255,214,10,.15);color:var(--yellow)">А</div><div><div class="fw" style="font-size:13px">Айгерим А.</div><div class="c3 fs11">@aigerim</div></div></div></td>
+            <td class="c3 fs12">NIS EMN Туркестан</td><td><span class="lv lv-e">Expert</span></td>
+            <td><span class="mono fw6 cg">88.4</span></td><td><span class="delta-up" style="font-size:12px">↑ +3.2</span></td></tr>
+          <tr><td><span class="rank-em">🥈</span></td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(245,158,11,.15);color:var(--purple)">Д</div><div><div class="fw" style="font-size:13px">Данияр М.</div><div class="c3 fs11">@daniyar</div></div></div></td>
+            <td class="c3 fs12">ЗКМУ</td><td><span class="lv lv-a">Advanced</span></td>
+            <td><span class="mono fw6 cc">85.1</span></td><td><span class="delta-up" style="font-size:12px">↑ +1.8</span></td></tr>
+          <tr class="you-row"><td><span class="rank-em">🥉</span></td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(52,211,153,.2);color:var(--cyan)">З</div><div><div class="fw fc gap8" style="font-size:13px">Зияда А. <span class="badge badge-c" style="font-size:9px">Ты</span></div><div class="c3 fs11">@ziyada</div></div></div></td>
+            <td class="c3 fs12">NIS EMN Туркестан</td><td><span class="lv lv-i">Intermediate</span></td>
+            <td><span class="mono fw6 cy">82.7</span></td><td><span class="delta-up" style="font-size:12px">↑ +5.1</span></td></tr>
+          <tr><td class="mono c3">#4</td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(0,224,150,.15);color:var(--green)">Е</div><div><div class="fw" style="font-size:13px">Ерлан К.</div><div class="c3 fs11">@erlan</div></div></div></td>
+            <td class="c3 fs12">КазНМУ</td><td><span class="lv lv-i">Intermediate</span></td>
+            <td><span class="mono fw6">79.2</span></td><td><span class="c3 fs12">→ 0</span></td></tr>
+          <tr><td class="mono c3">#5</td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(255,214,10,.15);color:var(--yellow)">М</div><div><div class="fw" style="font-size:13px">Мадина С.</div><div class="c3 fs11">@madina</div></div></div></td>
+            <td class="c3 fs12">ЗКМУ</td><td><span class="lv lv-b">Beginner</span></td>
+            <td><span class="mono fw6">74.6</span></td><td><span style="font-size:12px;color:var(--red)">↓ -1.4</span></td></tr>
+          <tr><td class="mono c3">#6</td>
+            <td><div class="fc gap12"><div class="av" style="background:rgba(255,45,85,.15);color:var(--red)">Б</div><div><div class="fw" style="font-size:13px">Болат Т.</div><div class="c3 fs11">@bolat</div></div></div></td>
+            <td class="c3 fs12">НАО МУС</td><td><span class="lv lv-b">Beginner</span></td>
+            <td><span class="mono fw6 cr">42.1</span></td><td><span style="font-size:12px;color:var(--red)">↓ -3.8</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+/* ═══════════════════════════════════
+   base.js — AngioSim shared logic
+   Theme toggle + Language system
+   ═══════════════════════════════════ */
+
+// ── TRANSLATIONS ─────────────────────────────────────────────────
+const LANG = {
+  ru: {
+    // nav
+    nav_dashboard:    'Главная',
+    nav_session:      'Новая сессия',
+    nav_results:      'Результаты',
+    nav_leaderboard:  'Рейтинг',
+    nav_profile:      'Мой профиль',
+    nav_teacher:      'Преподаватель',
+  
+  /* ── NAVIGATION EXTRAS ── */
+  nav_lessons:         'Уроки',
+
+  /* ── LESSONS PAGE ── */
+  lessons_title:       'Видеоуроки',
+  lessons_sub:         'Теория и техника сосудистой хирургии',
+  filter_all:          '🎯 Все',
+  filter_basics:       '📖 Основы',
+  filter_technique:    '🔬 Техника',
+  filter_sim:          '🤖 Симулятор',
+  filter_ai:           '🧠 ИИ-анализ',
+  filter_done:         '✅ Пройденные',
+  search_lessons:      'Поиск уроков...',
+
+  /* ── PROFILE PAGE ── */
+  profile_title:       'Мой профиль',
+  profile_sub:         'Прогресс, достижения, настройки',
+  profile_sessions:    'Сессий',
+  profile_avg:         'Средний балл',
+  profile_badges:      'Значков',
+  profile_skills:      'Навыки',
+  profile_recent:      'Последние сессии',
+  profile_achievements:'Достижения',
+  profile_settings:    'Настройки',
+  profile_all_history: 'Вся история',
+  set_theme:           'Тёмная тема',
+  set_theme_d:         'Переключить между тёмным и светлым режимом',
+  set_notif:           'Уведомления',
+  set_notif_d:         'Напоминания о тренировках и новых уроках',
+  set_sound:           'Звуковые сигналы',
+  set_sound_d:         'Звук при завершении сессии и достижении',
+  set_lang:            'Язык интерфейса',
+  set_lang_d:          'Выберите язык платформы',
+  set_export:          'Экспорт данных',
+  set_export_d:        'Скачать все сессии и результаты в PDF',
+  set_reset:           'Сбросить прогресс',
+  set_reset_d:         'Удалить все сессии и начать заново',
+    nav_logout:       'Выйти',
+    // topbar
+    theme_dark:  '🌙 Тёмная',
+    theme_light: '☀️ Светлая',
+    // common
+    btn_start_session: '▶ Начать сессию',
+    btn_view: 'Открыть',
+    btn_all: 'Все',
+    live_label: 'Симулятор активен',
+    // login
+    login_welcome: 'Добро пожаловать',
+    login_sub: 'Войдите или создайте аккаунт',
+    login_tab: 'Вход',
+    reg_tab: 'Регистрация',
+    login_email: 'Email',
+    login_pass: 'Пароль',
+    login_btn: 'Войти',
+    demo_btn: 'Демо — войти как студент',
+    reg_name: 'Имя и фамилия',
+    reg_uni: 'Университет',
+    reg_role: 'Роль',
+    role_student: 'Студент',
+    role_teacher: 'Преподаватель',
+    role_student_desc: 'Тренировки и прогресс',
+    role_teacher_desc: 'Мониторинг студентов',
+    reg_btn: 'Создать аккаунт',
+    // dashboard
+    dash_title: 'Главная',
+    dash_sub: 'Добро пожаловать обратно',
+    dash_welcome: 'Привет',
+    dash_sessions: 'Всего сессий',
+    dash_avg: 'Средний балл',
+    dash_best: 'Лучший результат',
+    dash_achievements: 'Достижений',
+    dash_progress: 'Прогресс',
+    dash_ai_tip: 'Рекомендация ИИ',
+    dash_lessons: 'Видеоуроки',
+    dash_recent: 'Последние сессии',
+    dash_history: 'История',
+    dash_ach_title: 'Достижения',
+    // sessions table headers
+    th_date: 'Дата',
+    th_mode: 'Режим',
+    th_vessel: 'Сосуд',
+    th_osats: 'OSATS',
+    th_leak: 'Утечка',
+    th_time: 'Время',
+    th_score: 'Итог',
+    // lessons
+    les_anatomy: 'Анатомия сосудов',
+    les_anatomy_desc: 'Базовый курс: строение артерий и вен',
+    les_suture: 'Техника анастомоза',
+    les_suture_desc: 'Пошаговое руководство по сосудистому шву',
+    les_pressure: 'Гемодинамика',
+    les_pressure_desc: 'Давление, поток и клинические нормы',
+    les_ai: 'ИИ-оценка шва',
+    les_ai_desc: 'Как читать результаты AngioSim AI',
+    les_min: 'мин',
+    les_watch: 'Смотреть',
+    // session
+    sess_title: 'Сессия',
+    sess_sensors: 'Датчики',
+    sess_bpm: 'Частота пульса',
+    sess_flow: 'Поток',
+    sess_press: 'Давление',
+    sess_leak: 'Утечка',
+    sess_time: 'Время',
+    sess_camera: 'Зона анализа шва',
+    sess_capture: 'Сфотографировать шов',
+    sess_upload: 'Загрузить',
+    sess_ai: 'ИИ-анализ',
+    sess_notes: 'Заметки',
+    sess_end: 'Завершить сессию',
+    sess_mode: 'Режим',
+    sess_cam_hint: 'Нажми для анализа шва',
+    sess_cam_sub: 'ИИ оценит качество анастомоза',
+    sess_analyzing: 'ИИ анализирует шов...',
+    sess_ai_empty: 'Сфотографируй анастомоз для оценки',
+    sess_stitches: 'Стежков',
+    sess_uniformity: 'Равномерность',
+    // results
+    res_title: 'Результаты',
+    res_grade_ex: 'Отлично',
+    res_grade_gd: 'Хорошо',
+    res_grade_ok: 'Удовлетворительно',
+    res_grade_bd: 'Требует доработки',
+    res_breakdown: 'Разбивка оценки',
+    res_ai: 'Анализ ИИ',
+    res_strong: 'Сильные стороны',
+    res_weak: 'Для улучшения',
+    res_teacher_fb: 'Фидбек преподавателя',
+    res_prev: 'Предыдущая сессия',
+    // leaderboard
+    lb_title: 'Рейтинг',
+    lb_sub: 'Лучшие хирурги платформы',
+    lb_score: '🏆 Лучший балл',
+    lb_xp: '📈 XP Прогресс',
+    lb_active: '⚡ Активность',
+    lb_student: 'Студент',
+    lb_uni: 'Университет',
+    lb_level: 'Уровень',
+    lb_avg: 'Средний балл',
+    lb_trend: 'Тренд',
+    // teacher
+    tea_title: 'Панель преподавателя',
+    tea_students: 'Студентов',
+    tea_sessions: 'Сессий всего',
+    tea_avg: 'Средний балл группы',
+    tea_attention: 'Требуют внимания',
+    tea_all_students: 'Все студенты',
+    tea_group_progress: 'Прогресс группы',
+  },
+
+  kz: {
+    nav_dashboard:    'Басты бет',
+    nav_session:      'Жаңа сессия',
+    nav_results:      'Нәтижелер',
+    nav_leaderboard:  'Рейтинг',
+    nav_profile:      'Менің профилім',
+    nav_teacher:      'Оқытушы',
+  
+  nav_lessons:         'Сабақтар',
+  lessons_title:       'Бейне сабақтар',
+  lessons_sub:         'Тамырлық хирургияның теориясы мен техникасы',
+  filter_all:          '🎯 Барлығы',
+  filter_basics:       '📖 Негіздер',
+  filter_technique:    '🔬 Техника',
+  filter_sim:          '🤖 Симулятор',
+  filter_ai:           '🧠 ЖИ-талдау',
+  filter_done:         '✅ Аяқталған',
+  search_lessons:      'Сабақтарды іздеу...',
+  profile_title:       'Менің профилім',
+  profile_sub:         'Прогресс, жетістіктер, параметрлер',
+  profile_sessions:    'Сессиялар',
+  profile_avg:         'Орташа балл',
+  profile_badges:      'Белгілер',
+  profile_skills:      'Дағдылар',
+  profile_recent:      'Соңғы сессиялар',
+  profile_achievements:'Жетістіктер',
+  profile_settings:    'Параметрлер',
+  profile_all_history: 'Барлық тарих',
+  set_theme:           'Күңгірт тақырып',
+  set_theme_d:         'Күңгірт және жарық режим арасында ауысу',
+  set_notif:           'Хабарландырулар',
+  set_notif_d:         'Жаттығулар мен жаңа сабақтар туралы еске салу',
+  set_sound:           'Дыбыстық сигналдар',
+  set_sound_d:         'Сессия аяқталғанда және жетістік алғанда дыбыс',
+  set_lang:            'Интерфейс тілі',
+  set_lang_d:          'Платформа тілін таңдаңыз',
+  set_export:          'Деректерді экспорттау',
+  set_export_d:        'Барлық сессияларды PDF форматында жүктеу',
+  set_reset:           'Прогресті қалпына келтіру',
+  set_reset_d:         'Барлық сессияларды жою және қайта бастау',
+    nav_logout:       'Шығу',
+    theme_dark:  '🌙 Қараңғы',
+    theme_light: '☀️ Ашық',
+    btn_start_session: '▶ Сессия бастау',
+    btn_view: 'Ашу',
+    btn_all: 'Барлығы',
+    live_label: 'Симулятор белсенді',
+    login_welcome: 'Қош келдіңіз',
+    login_sub: 'Кіріңіз немесе тіркеліңіз',
+    login_tab: 'Кіру',
+    reg_tab: 'Тіркелу',
+    login_email: 'Email',
+    login_pass: 'Құпия сөз',
+    login_btn: 'Кіру',
+    demo_btn: 'Демо — студент ретінде кіру',
+    reg_name: 'Аты-жөні',
+    reg_uni: 'Университет',
+    reg_role: 'Рөл',
+    role_student: 'Студент',
+    role_teacher: 'Оқытушы',
+    role_student_desc: 'Жаттығу және прогресс',
+    role_teacher_desc: 'Студенттерді бақылау',
+    reg_btn: 'Тіркелу',
+    dash_title: 'Басты бет',
+    dash_sub: 'Қайта оралуыңызбен',
+    dash_welcome: 'Сәлем',
+    dash_sessions: 'Барлық сессиялар',
+    dash_avg: 'Орташа балл',
+    dash_best: 'Үздік нәтиже',
+    dash_achievements: 'Жетістіктер',
+    dash_progress: 'Прогресс',
+    dash_ai_tip: 'ЖИ ұсынысы',
+    dash_lessons: 'Бейне сабақтар',
+    dash_recent: 'Соңғы сессиялар',
+    dash_history: 'Тарих',
+    dash_ach_title: 'Жетістіктер',
+    th_date:'Күні',th_mode:'Режим',th_vessel:'Тамыр',th_osats:'OSATS',th_leak:'Ағып кету',th_time:'Уақыт',th_score:'Нәтиже',
+    les_anatomy:'Тамыр анатомиясы',les_anatomy_desc:'Негізгі курс: артерия және вена құрылымы',
+    les_suture:'Анастомоз техникасы',les_suture_desc:'Тамырлық тігіске қадамдық нұсқаулық',
+    les_pressure:'Гемодинамика',les_pressure_desc:'Қысым, ағын және клиникалық нормалар',
+    les_ai:'ЖИ тігіс бағасы',les_ai_desc:'AngioSim AI нәтижелерін қалай оқуға болады',
+    les_min:'мин',les_watch:'Қарау',
+    sess_title:'Сессия',sess_sensors:'Датчиктер',sess_bpm:'Жүрек соғысы жиілігі',
+    sess_flow:'Ағын',sess_press:'Қысым',sess_leak:'Ағып кету',sess_time:'Уақыт',
+    sess_camera:'Тігіс талдау аймағы',sess_capture:'Тігісті суретке түсіру',
+    sess_upload:'Жүктеу',sess_ai:'ЖИ-талдау',sess_notes:'Жазбалар',
+    sess_end:'Сессияны аяқтау',sess_mode:'Режим',
+    sess_cam_hint:'Талдау үшін басыңыз',sess_cam_sub:'ЖИ анастомоз сапасын бағалайды',
+    sess_analyzing:'ЖИ тігісті талдап жатыр...',sess_ai_empty:'Бағалау үшін анастомозды суретке түсіріңіз',
+    sess_stitches:'Тігістер',sess_uniformity:'Біркелкілік',
+    res_title:'Нәтижелер',res_grade_ex:'Өте жақсы',res_grade_gd:'Жақсы',
+    res_grade_ok:'Қанағаттанарлық',res_grade_bd:'Жетілдіру қажет',
+    res_breakdown:'Баллдың бөлінуі',res_ai:'ЖИ талдауы',
+    res_strong:'Күшті жақтары',res_weak:'Жақсарту үшін',res_teacher_fb:'Оқытушы пікірі',res_prev:'Алдыңғы сессия',
+    lb_title:'Рейтинг',lb_sub:'Платформаның үздік хирургтары',
+    lb_score:'🏆 Үздік балл',lb_xp:'📈 XP Прогресс',lb_active:'⚡ Белсенділік',
+    lb_student:'Студент',lb_uni:'Университет',lb_level:'Деңгей',lb_avg:'Орташа балл',lb_trend:'Үрдіс',
+    tea_title:'Оқытушы тақтасы',tea_students:'Студенттер',tea_sessions:'Барлық сессиялар',
+    tea_avg:'Топтың орташа баллы',tea_attention:'Назар аудару қажет',
+    tea_all_students:'Барлық студенттер',tea_group_progress:'Топ прогресі',
+  },
+
+  en: {
+    nav_dashboard:    'Dashboard',
+    nav_session:      'New Session',
+    nav_results:      'Results',
+    nav_leaderboard:  'Leaderboard',
+    nav_profile:      'My Profile',
+    nav_teacher:      'Teacher',
+  
+  nav_lessons:         'Lessons',
+  lessons_title:       'Video Lessons',
+  lessons_sub:         'Theory and technique of vascular surgery',
+  filter_all:          '🎯 All',
+  filter_basics:       '📖 Basics',
+  filter_technique:    '🔬 Technique',
+  filter_sim:          '🤖 Simulator',
+  filter_ai:           '🧠 AI Analysis',
+  filter_done:         '✅ Completed',
+  search_lessons:      'Search lessons...',
+  profile_title:       'My Profile',
+  profile_sub:         'Progress, achievements, settings',
+  profile_sessions:    'Sessions',
+  profile_avg:         'Average Score',
+  profile_badges:      'Badges',
+  profile_skills:      'Skills',
+  profile_recent:      'Recent Sessions',
+  profile_achievements:'Achievements',
+  profile_settings:    'Settings',
+  profile_all_history: 'Full History',
+  set_theme:           'Dark Theme',
+  set_theme_d:         'Switch between dark and light mode',
+  set_notif:           'Notifications',
+  set_notif_d:         'Reminders about training and new lessons',
+  set_sound:           'Sound Alerts',
+  set_sound_d:         'Sound on session end and new achievement',
+  set_lang:            'Interface Language',
+  set_lang_d:          'Choose platform language',
+  set_export:          'Export Data',
+  set_export_d:        'Download all sessions and results as PDF',
+  set_reset:           'Reset Progress',
+  set_reset_d:         'Delete all sessions and start over',
+    nav_logout:       'Log Out',
+    theme_dark:  '🌙 Dark',
+    theme_light: '☀️ Light',
+    btn_start_session: '▶ Start Session',
+    btn_view: 'Open',
+    btn_all: 'All',
+    live_label: 'Simulator Active',
+    login_welcome: 'Welcome',
+    login_sub: 'Sign in or create an account',
+    login_tab: 'Sign In',
+    reg_tab: 'Register',
+    login_email: 'Email',
+    login_pass: 'Password',
+    login_btn: 'Sign In',
+    demo_btn: 'Demo — enter as student',
+    reg_name: 'Full Name',
+    reg_uni: 'University',
+    reg_role: 'Role',
+    role_student: 'Student',
+    role_teacher: 'Teacher',
+    role_student_desc: 'Training & progress',
+    role_teacher_desc: 'Monitor students',
+    reg_btn: 'Create Account',
+    dash_title: 'Dashboard',
+    dash_sub: 'Welcome back',
+    dash_welcome: 'Hello',
+    dash_sessions: 'Total Sessions',
+    dash_avg: 'Average Score',
+    dash_best: 'Best Result',
+    dash_achievements: 'Achievements',
+    dash_progress: 'Progress',
+    dash_ai_tip: 'AI Recommendation',
+    dash_lessons: 'Video Lessons',
+    dash_recent: 'Recent Sessions',
+    dash_history: 'History',
+    dash_ach_title: 'Achievements',
+    th_date:'Date',th_mode:'Mode',th_vessel:'Vessel',th_osats:'OSATS',th_leak:'Leak',th_time:'Time',th_score:'Score',
+    les_anatomy:'Vascular Anatomy',les_anatomy_desc:'Basic course: artery and vein structure',
+    les_suture:'Anastomosis Technique',les_suture_desc:'Step-by-step vascular suture guide',
+    les_pressure:'Hemodynamics',les_pressure_desc:'Pressure, flow and clinical norms',
+    les_ai:'AI Suture Assessment',les_ai_desc:'How to read AngioSim AI results',
+    les_min:'min',les_watch:'Watch',
+    sess_title:'Session',sess_sensors:'Sensors',sess_bpm:'Heart Rate',
+    sess_flow:'Flow',sess_press:'Pressure',sess_leak:'Leak',sess_time:'Time',
+    sess_camera:'Suture Analysis Zone',sess_capture:'Photograph Suture',
+    sess_upload:'Upload',sess_ai:'AI Analysis',sess_notes:'Notes',
+    sess_end:'End Session',sess_mode:'Mode',
+    sess_cam_hint:'Tap to analyze suture',sess_cam_sub:'AI will evaluate anastomosis quality',
+    sess_analyzing:'AI analyzing suture...',sess_ai_empty:'Photograph anastomosis for assessment',
+    sess_stitches:'Stitches',sess_uniformity:'Uniformity',
+    res_title:'Results',res_grade_ex:'Excellent',res_grade_gd:'Good',
+    res_grade_ok:'Satisfactory',res_grade_bd:'Needs Improvement',
+    res_breakdown:'Score Breakdown',res_ai:'AI Analysis',
+    res_strong:'Strengths',res_weak:'Areas to Improve',res_teacher_fb:'Teacher Feedback',res_prev:'Previous Session',
+    lb_title:'Leaderboard',lb_sub:'Top surgeons on the platform',
+    lb_score:'🏆 Best Score',lb_xp:'📈 XP Progress',lb_active:'⚡ Activity',
+    lb_student:'Student',lb_uni:'University',lb_level:'Level',lb_avg:'Avg Score',lb_trend:'Trend',
+    tea_title:'Teacher Dashboard',tea_students:'Students',tea_sessions:'Total Sessions',
+    tea_avg:'Group Average Score',tea_attention:'Need Attention',
+    tea_all_students:'All Students',tea_group_progress:'Group Progress',
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────
+let currentLang = localStorage.getItem('as_lang') || 'ru';
+let currentTheme = localStorage.getItem('as_theme') || 'dark';
+
+// ── APPLY THEME ───────────────────────────────────────────────────
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('as_theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = LANG[currentLang][theme === 'dark' ? 'theme_light' : 'theme_dark'];
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+// ── APPLY LANGUAGE ────────────────────────────────────────────────
+function applyLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('as_lang', lang);
+
+  // update all [data-t] elements
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (LANG[lang][key] !== undefined) el.textContent = LANG[lang][key];
+  });
+
+  // update placeholder [data-tp]
+  document.querySelectorAll('[data-tp]').forEach(el => {
+    const key = el.getAttribute('data-tp');
+    if (LANG[lang][key] !== undefined) el.placeholder = LANG[lang][key];
+  });
+
+  // highlight active lang button
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+
+  // update theme btn label
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = LANG[lang][currentTheme === 'dark' ? 'theme_light' : 'theme_dark'];
+}
+
+// ── SIDEBAR ACTIVE STATE ──────────────────────────────────────────
+function setActiveNav() {
+  const page = document.body.dataset.page;
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(currentTheme);
+  applyLang(currentLang);
+  setActiveNav();
+});
+
+// T helper for JS-generated text
+function t(key) {
+  return LANG[currentLang][key] || key;
+}
+
+
+/* ══════════════════════════════════════
+   #9  RIPPLE on all .btn clicks
+══════════════════════════════════════ */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(e.clientX-rect.left-size/2)+'px;top:'+(e.clientY-rect.top-size/2)+'px';
+  btn.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 560);
+});
+
+/* ══════════════════════════════════════
+   #5  SKELETON on stat cards (dashboard/teacher)
+══════════════════════════════════════ */
+(function(){
+  const scards = document.querySelectorAll('.scard');
+  if (!scards.length) return;
+  scards.forEach(function(c){ c.classList.add('sk-active'); });
+  setTimeout(function(){
+    scards.forEach(function(c){
+      c.classList.remove('sk-active');
+      c.style.transition = 'opacity .4s';
+    });
+  }, 900);
+})();
+
+</script>
+<script>
+function showTab(type, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  const labels = { score: 'Средний балл', xp: 'XP', active: 'Сессий' };
+  document.getElementById('col-hd').textContent = labels[type];
+}
+</script>
+</body>
+</html>

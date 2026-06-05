@@ -1,0 +1,87 @@
+.profile-hero{background:linear-gradient(135deg,rgba(52,211,153,.06),rgba(245,158,11,.05));border:1px solid rgba(52,211,153,.15);border-radius:var(--r2);padding:32px 36px;display:flex;align-items:center;gap:28px;margin-bottom:24px;position:relative;overflow:hidden}
+
+.profile-hero::before{content:'';position:absolute;top:-60px;right:-40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,.06),transparent 70%);pointer-events:none}
+
+.profile-avatar{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;color:#fff;flex-shrink:0;position:relative;z-index:1;box-shadow:0 0 0 4px rgba(52,211,153,.2)}
+
+.profile-info{flex:1;z-index:1}
+
+.profile-name{font-size:26px;font-weight:900;margin-bottom:4px}
+
+.profile-role{font-size:12px;color:var(--t3);margin-bottom:12px}
+
+.profile-tags{display:flex;gap:8px;flex-wrap:wrap}
+
+.xp-section{margin-top:14px}
+
+.xp-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+
+.xp-label{font-size:12px;color:var(--t3)}
+
+.xp-val{font-family:var(--m);font-size:13px;color:var(--cyan);font-weight:700}
+
+.xp-bar-big{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+
+.xp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .6s ease}
+
+.xp-next{font-size:11px;color:var(--t4);margin-top:4px}
+
+.profile-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end;z-index:1}
+
+.p-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+
+.p-stat{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:18px 16px;text-align:center;transition:border-color .2s}
+
+.p-stat:hover{border-color:var(--b2)}
+
+.p-stat-icon{font-size:22px;margin-bottom:10px}
+
+.p-stat-val{font-family:var(--m);font-size:28px;font-weight:700;line-height:1;margin-bottom:6px}
+
+.p-stat-lbl{font-size:11px;color:var(--t3)}
+
+.radar-wrap{position:relative;height:260px;width:100%;max-width:280px;margin:0 auto}
+
+.mini-hist{display:flex;flex-direction:column;gap:8px}
+
+.mini-row{display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:var(--r);padding:10px 14px;font-size:13px}
+
+.mini-score{font-family:var(--m);font-weight:700;min-width:40px}
+
+.mini-mode{font-size:11px;color:var(--t3);flex:1}
+
+.mini-date{font-size:11px;color:var(--t4)}
+
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px}
+
+.ach-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:18px 14px;text-align:center;transition:all .2s;position:relative}
+
+.ach-card.locked{opacity:.45;filter:grayscale(.6)}
+
+.ach-card:not(.locked):hover{border-color:var(--b2);transform:translateY(-2px)}
+
+.ach-icon{font-size:32px;margin-bottom:10px}
+
+.ach-name{font-size:13px;font-weight:800;margin-bottom:4px}
+
+.ach-desc{font-size:11px;color:var(--t3);line-height:1.4}
+
+.ach-date{font-size:10px;color:var(--t4);margin-top:8px}
+
+.ach-glow{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:80px;height:50px;pointer-events:none;border-radius:50%}
+
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--b1)}
+
+.settings-row:last-child{border-bottom:none}
+
+.settings-label{font-size:14px;font-weight:600}
+
+.settings-desc{font-size:12px;color:var(--t3);margin-top:2px}
+
+.toggle-sw{width:44px;height:24px;border-radius:12px;background:var(--bg3);border:1px solid var(--b1);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+
+.toggle-sw.on{background:var(--cyan);border-color:var(--cyan)}
+
+.toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+.toggle-sw.on::after{transform:translateX(20px)}

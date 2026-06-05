@@ -1,0 +1,13 @@
+.stu-card { background:var(--card); border:1px solid var(--b1); border-radius:var(--r2); padding:18px; transition:all .2s; cursor:pointer; }
+
+.stu-card:hover { border-color:var(--b2); transform:translateY(-2px); box-shadow:var(--shadow); }
+
+.stu-av { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; flex-shrink:0; }
+
+.warn-card { background:rgba(255,45,85,.05); border:1px solid rgba(255,45,85,.15); border-radius:var(--r); padding:12px 14px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+
+.warn-card:last-child { margin-bottom:0; }
+
+.feedback-form { background:var(--bg3); border:1px solid var(--b1); border-radius:var(--r2); padding:20px; margin-top:16px; display:none; }
+
+.feedback-form.open { display:block; }
