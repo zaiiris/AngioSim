@@ -93,6 +93,14 @@
         <div class="stu-card"><div class="fc gap12 mb12"><div class="stu-av" style="background:rgba(255,140,0,.15);color:var(--orange)">М</div><div><div class="fw fs13">Мадина С.</div><div class="fc gap8 mt8"><span class="lv lv-b fs10">Beginner</span><span class="fs11 c3">7 сессий</span></div></div></div><div class="bar-wrap mb8"><div class="bar bar-y" style="width:75%"></div></div><div class="mono fs11 c3">Avg: 74.6</div></div>
       </div>
     </div>
+
+    <!-- RECENT GROUP SESSIONS -->
+    <div class="card fade d3">
+      <div class="sec-hd mb16"><i class="fa-solid fa-clipboard-list cc"></i> Последние сессии группы</div>
+      <div id="teacherSessions" class="teacher-session-list">
+        <div class="fs12 c3">Загрузка результатов...</div>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -564,13 +572,14 @@ document.addEventListener('click', function(e) {
 
 </script>
 <script>
+const API_BASE = 'http://localhost:8000';
 const gctx = document.getElementById('groupChart').getContext('2d');
 const gg = gctx.createLinearGradient(0,0,0,180);
 gg.addColorStop(0,'rgba(245,158,11,.18)'); gg.addColorStop(1,'rgba(191,90,242,0)');
-new Chart(gctx, {
+const groupChart = new Chart(gctx, {
   type:'line',
   data:{
-    labels:['Янв','Фев','Мар','Апр','Май'],
+    labels:['Jan','Feb','Mar','Apr','May'],
     datasets:[{data:[3.0,3.2,3.4,3.5,3.6],borderColor:'#bf5af2',backgroundColor:gg,borderWidth:2,pointBackgroundColor:'#bf5af2',pointRadius:5,tension:.4,fill:true}]
   },
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
@@ -578,14 +587,169 @@ new Chart(gctx, {
       y:{grid:{color:'#1c2e48'},ticks:{color:'#3d5475',font:{size:11}},min:2,max:5}}}
 });
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+}
+
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = safeSeconds % 60;
+  return minutes + ':' + String(rest).padStart(2, '0');
+}
+
+function scoreBarClass(score) {
+  if (score >= 85) return 'bar-g';
+  if (score >= 70) return 'bar-c';
+  if (score >= 55) return 'bar-y';
+  return 'bar-r';
+}
+
+function levelClass(level) {
+  return {
+    Expert: 'lv-e',
+    Advanced: 'lv-a',
+    Intermediate: 'lv-i',
+    Beginner: 'lv-b'
+  }[level] || 'lv-b';
+}
+
+function setStatCard(index, value) {
+  const card = document.querySelectorAll('.scard')[index];
+  if (!card) return;
+  const val = card.querySelector('.scard-val');
+  if (val) val.textContent = value;
+}
+
+function renderStudents(students) {
+  const grid = document.querySelector('.card.fade.d2 .g3');
+  if (!grid || !students.length) return;
+  grid.innerHTML = students.map(student => {
+    const score = Math.round(Number(student.average_score) || 0);
+    const attention = student.needs_attention;
+    return `
+      <div class="stu-card" onclick="openFb('${escapeHtml(student.full_name)}')" style="${attention ? 'border-color:rgba(255,45,85,.28)' : ''}">
+        <div class="fc gap12 mb12">
+          <div class="stu-av" style="background:${attention ? 'rgba(255,45,85,.15)' : 'rgba(52,211,153,.15)'};color:${attention ? 'var(--red)' : 'var(--cyan)'}">${escapeHtml(student.initials)}</div>
+          <div>
+            <div class="fw fs13">${escapeHtml(student.full_name)}</div>
+            <div class="fc gap8 mt8">
+              <span class="lv ${levelClass(student.level)} fs10">${escapeHtml(student.level)}</span>
+              <span class="fs11 c3">${student.completed_sessions || 0} sessions</span>
+            </div>
+          </div>
+        </div>
+        <div class="bar-wrap mb8"><div class="bar ${scoreBarClass(score)}" style="width:${score}%"></div></div>
+        <div class="mono fs11 ${attention ? 'cr' : 'c3'}">Avg: ${Number(student.average_score || 0).toFixed(1)}${attention ? ' · attention' : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAttention(students) {
+  const warningCard = document.querySelectorAll('.g2 .card')[1];
+  if (!warningCard) return;
+  const form = document.getElementById('fb-form');
+  warningCard.querySelectorAll('.warn-card').forEach(card => card.remove());
+  const attention = students.slice(0, 4);
+  const markup = attention.length ? attention.map(student => `
+    <div class="warn-card">
+      <div class="stu-av" style="background:rgba(255,45,85,.15);color:var(--red);width:36px;height:36px;font-size:14px">${escapeHtml(student.initials)}</div>
+      <div style="flex:1">
+        <div class="fc gap8 mb8">
+          <span class="fw fs13">${escapeHtml(student.full_name)}</span>
+          <span class="badge badge-r">${escapeHtml(student.attention_reason || 'Needs attention')}</span>
+        </div>
+        <div class="fs12 c3">Last session: ${formatDate(student.last_session_at)} · OSATS ${Number(student.average_osats || 0).toFixed(1)}/5</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openFb('${escapeHtml(student.full_name)}')">Написать</button>
+    </div>
+  `).join('') : '<div class="fs12 c3">Все студенты активны, критичных сигналов нет.</div>';
+  form.insertAdjacentHTML('beforebegin', markup);
+}
+
+function renderProgress(progress) {
+  if (!progress || !progress.length) return;
+  groupChart.data.labels = progress.map(item => item.month);
+  groupChart.data.datasets[0].data = progress.map(item => Number(item.average_osats) || 0);
+  groupChart.update();
+}
+
+function renderTeacherSummary(data) {
+  const summary = data.summary || {};
+  setStatCard(0, summary.students_count || 0);
+  setStatCard(1, summary.completed_sessions || 0);
+  setStatCard(2, Number(summary.average_score || 0).toFixed(1));
+  setStatCard(3, summary.attention_count || 0);
+  renderStudents(data.students || []);
+  renderAttention(data.attention || []);
+  renderProgress(data.group_progress || []);
+}
+
+function renderSessions(sessions) {
+  const list = document.getElementById('teacherSessions');
+  if (!list) return;
+  if (!sessions.length) {
+    list.innerHTML = '<div class="fs12 c3">Сессии пока не найдены.</div>';
+    return;
+  }
+  list.innerHTML = sessions.slice(0, 8).map(session => {
+    const score = Math.round(Number(session.total_score) || 0);
+    return `
+      <div class="teacher-session-row">
+        <div>
+          <div class="fw fs13">${escapeHtml(session.student_name)}</div>
+          <div class="fs12 c3">${formatDate(session.started_at)} · ${escapeHtml(session.mode)} · ${escapeHtml(session.vessel_size)} · ${formatDuration(session.duration_seconds)}</div>
+        </div>
+        <div class="teacher-session-metrics">
+          <span class="mono ${score >= 70 ? 'cg' : 'cr'}">${score}/100</span>
+          <span class="mono c3">OSATS ${Number(session.osats_score || 0).toFixed(1)}/5</span>
+          <span class="mono c3">${session.uniformity_percent || 0}% uniformity</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadTeacherPage() {
+  try {
+    const [studentsResponse, sessionsResponse] = await Promise.all([
+      fetch(API_BASE + '/api/teacher/students'),
+      fetch(API_BASE + '/api/teacher/sessions')
+    ]);
+    if (!studentsResponse.ok || !sessionsResponse.ok) throw new Error('Teacher API unavailable');
+    renderTeacherSummary(await studentsResponse.json());
+    const sessionData = await sessionsResponse.json();
+    renderSessions(sessionData.sessions || []);
+  } catch (err) {
+    console.warn('Using static teacher demo:', err.message);
+  }
+}
+
 function openFb(name) {
   document.getElementById('fb-form').classList.add('open');
-  document.getElementById('fb-name').textContent = {bolat:'Болат Т.',alina:'Алина П.',karim:'Карим У.'}[name];
+  const knownNames = {bolat:'Болат Т.',alina:'Алина П.',karim:'Карим У.'};
+  document.getElementById('fb-name').textContent = knownNames[name] || name;
   document.getElementById('fb-form').scrollIntoView({behavior:'smooth'});
 }
 function closeFb() {
   document.getElementById('fb-form').classList.remove('open');
 }
+
+loadTeacherPage();
 </script>
 </body>
 </html>

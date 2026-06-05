@@ -97,6 +97,151 @@ def build_user_sessions(user_id: int = 1, limit: int = 25) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def level_for_score(score: float, sessions_count: int) -> str:
+    if score >= 88 and sessions_count >= 10:
+        return "Expert"
+    if score >= 80:
+        return "Advanced"
+    if score >= 65:
+        return "Intermediate"
+    return "Beginner"
+
+
+def initials_for_name(full_name: str) -> str:
+    parts = [part for part in full_name.replace(".", " ").split() if part]
+    return "".join(part[0] for part in parts[:2]).upper() or "AS"
+
+
+def build_teacher_students() -> dict:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            WITH student_stats AS (
+                SELECT
+                    u.id,
+                    u.full_name,
+                    u.email,
+                    u.university,
+                    COUNT(sc.id) AS completed_sessions,
+                    COALESCE(ROUND(AVG(sc.total_score), 1), 0) AS average_score,
+                    COALESCE(MAX(sc.total_score), 0) AS best_score,
+                    COALESCE(ROUND(AVG(ar.osats_score), 1), 0) AS average_osats,
+                    COALESCE(ROUND(AVG(ar.uniformity_percent), 1), 0) AS average_uniformity,
+                    MAX(s.started_at) AS last_session_at,
+                    CAST(COALESCE(julianday('now') - julianday(MAX(s.started_at)), 999) AS INTEGER) AS inactive_days
+                FROM users u
+                LEFT JOIN training_sessions s ON s.user_id = u.id
+                LEFT JOIN scores sc ON sc.session_id = s.id
+                LEFT JOIN ai_results ar ON ar.id = (
+                    SELECT id FROM ai_results WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1
+                )
+                WHERE u.role = 'student'
+                GROUP BY u.id
+            )
+            SELECT * FROM student_stats
+            ORDER BY average_score DESC, completed_sessions DESC, full_name ASC
+            """
+        ).fetchall()
+        progress_rows = conn.execute(
+            """
+            SELECT
+                strftime('%Y-%m', s.started_at) AS month,
+                COALESCE(ROUND(AVG(sc.total_score), 1), 0) AS average_score,
+                COALESCE(ROUND(AVG(ar.osats_score), 2), 0) AS average_osats,
+                COUNT(sc.id) AS completed_sessions
+            FROM training_sessions s
+            JOIN scores sc ON sc.session_id = s.id
+            LEFT JOIN ai_results ar ON ar.id = (
+                SELECT id FROM ai_results WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1
+            )
+            GROUP BY strftime('%Y-%m', s.started_at)
+            ORDER BY month DESC
+            LIMIT 6
+            """
+        ).fetchall()
+
+    students = []
+    for row in rows:
+        student = dict(row)
+        student["initials"] = initials_for_name(student["full_name"])
+        student["level"] = level_for_score(
+            float(student["average_score"] or 0),
+            int(student["completed_sessions"] or 0),
+        )
+        student["needs_attention"] = (
+            int(student["completed_sessions"] or 0) == 0
+            or int(student["inactive_days"] or 0) >= 10
+            or float(student["average_score"] or 0) < 60
+            or float(student["average_osats"] or 0) < 2.5
+        )
+        if int(student["completed_sessions"] or 0) == 0:
+            student["attention_reason"] = "No completed sessions yet"
+        elif int(student["inactive_days"] or 0) >= 10:
+            student["attention_reason"] = f"No activity for {student['inactive_days']} days"
+        elif float(student["average_osats"] or 0) < 2.5:
+            student["attention_reason"] = "OSATS below 2.5"
+        elif float(student["average_score"] or 0) < 60:
+            student["attention_reason"] = "Average score below 60"
+        else:
+            student["attention_reason"] = ""
+        students.append(student)
+
+    completed_total = sum(int(student["completed_sessions"] or 0) for student in students)
+    averages = [float(student["average_score"] or 0) for student in students if student["completed_sessions"]]
+    attention = [student for student in students if student["needs_attention"]]
+
+    return {
+        "summary": {
+            "students_count": len(students),
+            "completed_sessions": completed_total,
+            "average_score": round(sum(averages) / len(averages), 1) if averages else 0,
+            "attention_count": len(attention),
+        },
+        "students": students,
+        "attention": attention,
+        "group_progress": [dict(row) for row in reversed(progress_rows)],
+    }
+
+
+def build_teacher_sessions(limit: int = 50) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                s.id,
+                s.user_id,
+                u.full_name AS student_name,
+                u.university,
+                s.mode,
+                s.vessel_size,
+                s.goal,
+                s.started_at,
+                s.ended_at,
+                s.duration_seconds,
+                COALESCE(sc.total_score, 0) AS total_score,
+                COALESCE(sc.leak_score, 0) AS leak_score,
+                COALESCE(sc.pressure_score, 0) AS pressure_score,
+                COALESCE(sc.speed_score, 0) AS speed_score,
+                COALESCE(sc.ai_score, 0) AS ai_score,
+                COALESCE(ar.osats_score, 0) AS osats_score,
+                COALESCE(ar.stitch_count, 0) AS stitch_count,
+                COALESCE(ar.uniformity_percent, 0) AS uniformity_percent,
+                ar.feedback
+            FROM training_sessions s
+            JOIN users u ON u.id = s.user_id
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            LEFT JOIN ai_results ar ON ar.id = (
+                SELECT id FROM ai_results WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1
+            )
+            WHERE u.role = 'student'
+            ORDER BY s.started_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def build_ai_recommendation(summary: dict) -> str:
     completed = int(summary["completed_sessions"] or 0)
     average_score = float(summary["average_score"] or 0)
@@ -264,6 +409,16 @@ def get_dashboard_summary(user_id: int = 1) -> dict:
         "recent_sessions": recent_sessions,
         "progress": progress_rows,
     }
+
+
+@app.get("/api/teacher/students")
+def get_teacher_students() -> dict:
+    return build_teacher_students()
+
+
+@app.get("/api/teacher/sessions")
+def get_teacher_sessions(limit: int = 50) -> dict:
+    return {"sessions": build_teacher_sessions(limit=limit)}
 
 
 @app.get("/api/users/{user_id}/profile")

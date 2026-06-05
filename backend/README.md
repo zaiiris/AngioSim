@@ -11,6 +11,7 @@ Current prototype:
 - falls back to deterministic mock analysis when YOLO dependencies are missing
 - saves AI analysis results
 - returns session history
+- returns teacher monitoring data for students and group sessions
 
 ## Run locally
 
@@ -28,6 +29,14 @@ Then open:
 
 ```text
 http://localhost:8000/api/health
+```
+
+Useful demo endpoints:
+
+```text
+http://localhost:8000/api/dashboard/summary
+http://localhost:8000/api/teacher/students
+http://localhost:8000/api/teacher/sessions
 ```
 
 The first run creates:
