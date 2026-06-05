@@ -98,6 +98,49 @@ def get_session(session_id: int) -> dict:
     }
 
 
+@app.get("/api/results/latest")
+def get_latest_result() -> dict:
+    with get_connection() as conn:
+        session = conn.execute(
+            """
+            SELECT s.*
+            FROM training_sessions s
+            LEFT JOIN ai_results ar ON ar.session_id = s.id
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            WHERE ar.id IS NOT NULL OR sc.id IS NOT NULL
+            ORDER BY started_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if session is None:
+            raise HTTPException(status_code=404, detail="No saved results found")
+
+        session_id = session["id"]
+        ai_result = conn.execute(
+            "SELECT * FROM ai_results WHERE session_id = ? ORDER BY created_at DESC LIMIT 1",
+            (session_id,),
+        ).fetchone()
+        score = conn.execute(
+            "SELECT * FROM scores WHERE session_id = ?", (session_id,)
+        ).fetchone()
+        history = conn.execute(
+            """
+            SELECT s.id, s.started_at, COALESCE(sc.total_score, 0) AS total_score
+            FROM training_sessions s
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            ORDER BY s.started_at DESC
+            LIMIT 6
+            """
+        ).fetchall()
+
+    return {
+        "session": row_to_dict(session),
+        "ai_result": row_to_dict(ai_result),
+        "score": row_to_dict(score),
+        "history": [dict(row) for row in reversed(history)],
+    }
+
+
 @app.post("/api/ai/analyze-suture")
 async def analyze_suture(
     session_id: Annotated[int, Form()],

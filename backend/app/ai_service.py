@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,14 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 UPLOAD_DIR = ROOT_DIR / "backend" / "uploads" / "suture_images"
 MODEL_PATH = ROOT_DIR / "ai" / "models" / "suture_yolov8_best.pt"
 VESSEL_DIAMETER_MM = 5.0
+RUNTIME_DIR = ROOT_DIR / "backend" / ".runtime"
+YOLO_CONFIG_DIR = RUNTIME_DIR / "ultralytics"
+MPL_CONFIG_DIR = RUNTIME_DIR / "matplotlib"
+
+YOLO_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_DIR))
+os.environ.setdefault("MPLCONFIGDIR", str(MPL_CONFIG_DIR))
 
 
 @dataclass(frozen=True)
@@ -144,17 +153,18 @@ def yolo_empty_result(reason: str) -> AiAnalysis:
 
 def calculate_suture_metrics(boxes: list[dict], image_shape: tuple[int, int]) -> dict:
     stitch_count = len(boxes)
-    if stitch_count < 2:
+    if stitch_count < 3:
         return {
             "stitch_count": stitch_count,
-            "osats_score_100": 0,
-            "osats_score_5": 0.0,
+            "osats_score_100": stitch_count * 10,
+            "osats_score_5": round(stitch_count * 0.5, 1),
             "uniformity_percent": 0,
             "mean_distance_mm": 0,
             "min_distance_mm": 0,
             "max_distance_mm": 0,
             "std_distance_mm": 0,
             "gaps": [],
+            "status": "insufficient_detections",
         }
 
     image_h, image_w = image_shape
@@ -238,12 +248,15 @@ def calculate_suture_metrics(boxes: list[dict], image_shape: tuple[int, int]) ->
         "gaps": gaps,
         "calibration_method": calibration_method,
         "px_per_mm": round(px_per_mm, 2),
+        "status": "ok",
     }
 
 
 def build_feedback(metrics: dict) -> str:
-    if metrics["stitch_count"] < 2:
+    if metrics["stitch_count"] == 0:
         return "No stitches were detected. Try a clearer photo with the suture centered."
+    if metrics["stitch_count"] < 3:
+        return "Only a few stitches were detected, so the score is limited. Use a closer, sharper photo of the suture line."
     if metrics["uniformity_percent"] >= 85:
         return "Spacing is stable. Keep the same rhythm and needle angle."
     if metrics["uniformity_percent"] >= 70:
