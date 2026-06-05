@@ -20,3 +20,14 @@ venv/
 .env
 .env.*
 !.env.example
+
+# Local runtime data
+*.db
+*.sqlite
+*.sqlite3
+backend/uploads/
+
+# Large AI artifacts
+*.pt
+*.onnx
+ai/datasets/

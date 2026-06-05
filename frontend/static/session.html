@@ -756,15 +756,35 @@ function selGoal(g) {
 }
 
 /* ── SESSION START ───────────────────────────────────── */
+const API_BASE = 'http://localhost:8000';
+let currentSessionId = null;
 let elapsed = 0, timerInt, sensorInt;
 const flowHistory = [], pressHistory = [];
 let flowChart, pressChart;
 
-function startSession() {
+async function startSession() {
+  try {
+    const response = await fetch(API_BASE + '/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: 1,
+        mode: selModeVal,
+        vessel_size: selVesselVal,
+        goal: selGoalVal
+      })
+    });
+    if (!response.ok) throw new Error('Session API failed');
+    const data = await response.json();
+    currentSessionId = data.session.id;
+  } catch (err) {
+    alert('Backend is not running. Start FastAPI on port 8000 and try again.');
+    return;
+  }
   document.getElementById('view-setup').style.display = 'none';
   document.getElementById('view-live').style.display = 'block';
   document.getElementById('end-btn').style.display = 'flex';
-  document.getElementById('topbar-title').textContent = 'Сессия #13';
+  document.getElementById('topbar-title').textContent = 'Session #' + currentSessionId;
   document.getElementById('topbar-sub').innerHTML =
     '<span class="live">Запись идёт</span>';
   document.getElementById('bpm-display').textContent = selModeVal==='ord' ? 54 : 86;
@@ -857,13 +877,21 @@ function captureShot() {
       ctx.fillStyle = '#00d9f5'; ctx.beginPath(); ctx.arc(x+2, 200, 3, 0, Math.PI*2); ctx.fill();
     }
     canvas.style.display = 'block';
-    loading.style.display = 'none';
-    analyzeAI(n);
+    canvas.toBlob(blob => {
+      if (!blob) {
+        loading.style.display = 'none';
+        return;
+      }
+      const file = new File([blob], 'mock-suture.png', { type: 'image/png' });
+      sendPhotoForAnalysis(file);
+    }, 'image/png');
   }, 1800);
 }
 
 function uploadPhoto(input) {
   const file = input.files[0]; if (!file) return;
+  const loading = document.getElementById('cam-loading');
+  loading.style.display = 'flex';
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
@@ -873,26 +901,47 @@ function uploadPhoto(input) {
       canvas.getContext('2d').drawImage(img, 0, 0);
       canvas.style.display = 'block';
       document.getElementById('cam-ph').style.display = 'none';
-      analyzeAI(7);
+      sendPhotoForAnalysis(file);
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function analyzeAI(stitchCount) {
-  const osats = +(3.4 + Math.random()*1.5).toFixed(1);
-  const uni   = Math.floor(64 + Math.random()*30);
-  const feedbacks = [
-    'Неравномерный интервал стежков. Уменьши шаг до 0.8–1.0 мм.',
-    'Хорошее натяжение нити. Обрати внимание на угол входа иглы.',
-    'Отличная техника! Работай над скоростью без потери качества.',
-    'Интервал стежков в дистальной зоне 1.2мм — уменьши до 0.8мм.'
-  ];
+async function sendPhotoForAnalysis(file) {
+  if (!currentSessionId) {
+    alert('Start a session before uploading a photo.');
+    document.getElementById('cam-loading').style.display = 'none';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('session_id', currentSessionId);
+  formData.append('image', file);
+
+  try {
+    const response = await fetch(API_BASE + '/api/ai/analyze-suture', {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) throw new Error('AI API failed');
+    const result = await response.json();
+    analyzeAI(result);
+  } catch (err) {
+    alert('Could not analyze photo. Check that the backend is running.');
+  } finally {
+    document.getElementById('cam-loading').style.display = 'none';
+  }
+}
+
+function analyzeAI(result) {
+  const stitchCount = result.stitch_count;
+  const osats = result.osats_score;
+  const uni = result.uniformity_percent;
   document.getElementById('ai-osats-num').textContent = osats;
   document.getElementById('ai-stitches').textContent  = stitchCount;
   document.getElementById('ai-uni').textContent = uni + '%';
-  document.getElementById('ai-fb-text').textContent   = '💬 ' + feedbacks[Math.floor(Math.random()*feedbacks.length)];
+  document.getElementById('ai-fb-text').textContent   = result.feedback;
   // Update arc
   const pct = osats / 5;
   document.getElementById('osats-arc').style.strokeDashoffset = 314.16 * (1 - pct);
@@ -904,6 +953,16 @@ function analyzeAI(stitchCount) {
 function endSession() {
   if (!confirm('Завершить сессию и перейти к результатам?')) return;
   clearInterval(timerInt); clearInterval(sensorInt);
+  if (currentSessionId) {
+    fetch(API_BASE + '/api/sessions/' + currentSessionId + '/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        duration_seconds: elapsed,
+        notes: document.getElementById('notes-area').value
+      })
+    });
+  }
   window.location.href = 'results.html';
 }
 </script>
