@@ -1,15 +1,20 @@
 # Database
 
-This folder will contain database schema and migrations.
+The first prototype uses SQLite.
 
-For the first backend prototype, SQLite can be enough.
-Later, PostgreSQL is better if the platform grows.
+Runtime file:
 
-Possible tables:
+```text
+database/angiosim.db
+```
 
-- users
-- sessions
-- session_events
-- scores
-- lessons
-- ai_results
+The FastAPI backend creates the database automatically on startup.
+
+Current tables:
+
+- `users`
+- `training_sessions`
+- `ai_results`
+- `scores`
+
+Later, this can move to PostgreSQL without changing the frontend flow.

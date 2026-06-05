@@ -1,16 +1,50 @@
 # Backend
 
-This folder will contain the API server.
+FastAPI server for AngioSim.
 
-The backend should connect:
+Current prototype:
 
-- frontend pages/app
-- database
-- Arduino trainer data
-- AI model inference
+- creates training sessions
+- stores data in SQLite
+- accepts suture image uploads
+- runs YOLOv8 suture analysis when `ai/models/suture_yolov8_best.pt` exists
+- falls back to deterministic mock analysis when YOLO dependencies are missing
+- saves AI analysis results
+- returns session history
 
-Possible stack later:
+## Run locally
 
-- Python FastAPI
-- PostgreSQL or SQLite for the first prototype
-- REST API first, WebSocket later if live session data is needed
+From the project root:
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000/api/health
+```
+
+The first run creates:
+
+```text
+database/angiosim.db
+backend/uploads/suture_images/
+```
+
+These local runtime files are ignored by git.
+
+## AI model
+
+Expected local model path:
+
+```text
+ai/models/suture_yolov8_best.pt
+```
+
+This file is ignored by git. If it exists and `ultralytics` is installed, `/api/ai/analyze-suture` uses the real YOLOv8 detector. Otherwise, the endpoint still works with mock analysis.
