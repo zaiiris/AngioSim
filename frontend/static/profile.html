@@ -586,21 +586,120 @@ document.addEventListener('click', function(e) {
   }, 900);
 })();
 
+const API_BASE = 'http://localhost:8000';
 const rctx = document.getElementById('radarChart').getContext('2d');
-new Chart(rctx, {
+const radarChart = new Chart(rctx, {
   type:'radar',
   data:{
-    labels:['Точность
-шва','Скорость','Гемостаз','Давление','Асептика','Анатомия'],
+    labels:['Suture quality','Speed','Pressure','Leak control','Uniformity'],
     datasets:[
-      {label:'Вы',data:[78,65,85,72,80,70],borderColor:'rgba(52,211,153,.8)',backgroundColor:'rgba(52,211,153,.08)',pointBackgroundColor:'rgba(52,211,153,1)',borderWidth:2,pointRadius:4},
-      {label:'Expert',data:[90,88,92,90,95,88],borderColor:'rgba(245,158,11,.5)',backgroundColor:'rgba(245,158,11,.04)',pointBackgroundColor:'rgba(245,158,11,.7)',borderWidth:1.5,pointRadius:3,borderDash:[4,3]}
+      {label:'You',data:[78,65,85,72,80],borderColor:'rgba(52,211,153,.8)',backgroundColor:'rgba(52,211,153,.08)',pointBackgroundColor:'rgba(52,211,153,1)',borderWidth:2,pointRadius:4},
+      {label:'Expert',data:[90,88,92,90,88],borderColor:'rgba(245,158,11,.5)',backgroundColor:'rgba(245,158,11,.04)',pointBackgroundColor:'rgba(245,158,11,.7)',borderWidth:1.5,pointRadius:3,borderDash:[4,3]}
     ]
   },
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,grid:{color:'rgba(61,84,117,.4)'},angleLines:{color:'rgba(61,84,117,.4)'},pointLabels:{color:'#7a9cc0',font:{size:11}},ticks:{display:false}}}}
 });
+function setProfileStat(index, value) {
+  const stat = document.querySelectorAll('.p-stat')[index];
+  if (!stat) return;
+  const val = stat.querySelector('.p-stat-val');
+  if (val) val.textContent = value;
+}
+function formatDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+}
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = safeSeconds % 60;
+  return minutes + ':' + String(rest).padStart(2, '0');
+}
+function scoreColorClass(score) {
+  if (score >= 85) return 'cg';
+  if (score >= 70) return 'cc';
+  if (score >= 55) return 'cy';
+  return 'cr';
+}
+function updateProfileHero(data) {
+  const user = data.user || {};
+  const summary = data.summary || {};
+  const xp = Number(summary.xp) || 0;
+  const next = Number(summary.next_level_xp) || 1500;
+  const pct = Math.max(0, Math.min(100, Math.round((xp / next) * 100)));
+  const name = document.querySelector('.profile-name');
+  const role = document.querySelector('.profile-role');
+  const xpVal = document.querySelector('.xp-val');
+  const xpFill = document.querySelector('.xp-fill');
+  const xpNext = document.querySelector('.xp-next');
+  const avatar = document.querySelector('.profile-avatar');
+  if (name && user.full_name) name.textContent = user.full_name;
+  if (role) role.innerHTML = '<i class="fa-solid fa-graduation-cap" style="color:var(--cyan);margin-right:6px"></i>' + (user.role || 'student') + ' · ' + (user.university || 'AngioSim');
+  if (avatar && user.full_name) avatar.textContent = user.full_name.trim()[0].toUpperCase();
+  if (xpVal) xpVal.textContent = xp + ' / ' + next + ' XP';
+  if (xpFill) xpFill.style.width = pct + '%';
+  if (xpNext) xpNext.textContent = 'Осталось ' + Math.max(0, next - xp) + ' XP до повышения';
+}
+function renderProfileSessions(sessions) {
+  const list = document.querySelector('.mini-hist');
+  if (!list || !sessions.length) return;
+  list.innerHTML = sessions.map(session => {
+    const score = Math.round(Number(session.total_score) || 0);
+    const scoreClass = scoreColorClass(score);
+    return `
+      <div class="mini-row">
+        <span class="${score >= 75 ? 'delta-up' : ''}" style="font-size:16px">${score >= 75 ? '↑' : '→'}</span>
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(52,211,153,.1);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0">#${session.id}</div>
+        <div style="flex:1">
+          <div class="fw fs13">Сессия #${session.id}</div>
+          <div class="mini-mode">${session.mode || '—'} · ${session.vessel_size || '—'} · ${formatDuration(session.duration_seconds)} мин</div>
+        </div>
+        <span class="mini-score ${scoreClass}">${score}</span>
+        <span class="mini-date">${formatDate(session.started_at)}</span>
+      </div>
+    `;
+  }).join('');
+}
+function updateAchievements(data) {
+  const achievements = data.achievements || [];
+  const unlocked = achievements.filter(item => item.unlocked).length;
+  const badge = document.querySelector('.sec-hd .badge');
+  if (badge) badge.textContent = unlocked + ' / 12';
+}
+function updateProfile(data) {
+  const summary = data.summary || {};
+  const skills = data.skills || {};
+  setProfileStat(0, summary.completed_sessions || 0);
+  setProfileStat(1, Number(summary.average_score || 0).toFixed(1));
+  setProfileStat(2, summary.xp || 0);
+  setProfileStat(3, summary.achievements || 0);
+  updateProfileHero(data);
+  renderProfileSessions(data.recent_sessions || []);
+  updateAchievements(data);
+  radarChart.data.datasets[0].data = [
+    skills.suture_quality || 0,
+    skills.speed || 0,
+    skills.pressure || 0,
+    skills.leak_control || 0,
+    skills.uniformity || 0
+  ];
+  radarChart.update();
+}
+async function loadProfile() {
+  try {
+    const response = await fetch(API_BASE + '/api/users/1/profile');
+    if (!response.ok) throw new Error('Profile API unavailable');
+    const data = await response.json();
+    updateProfile(data);
+  } catch (err) {
+    console.warn('Using static profile demo:', err.message);
+  }
+}
 function toggleThemeSync(el){toggleTheme();const d=document.documentElement.getAttribute('data-theme')==='dark';el.classList.toggle('on',d);}
 (function(){const d=(localStorage.getItem('as_theme')||'dark')==='dark';document.getElementById('theme-toggle').classList.toggle('on',d);})();
+loadProfile();
 </script>
 </body>
 </html>

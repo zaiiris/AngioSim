@@ -20,6 +20,104 @@ app.add_middleware(
 )
 
 
+def build_user_summary(user_id: int = 1) -> dict:
+    with get_connection() as conn:
+        aggregate = conn.execute(
+            """
+            SELECT
+                COUNT(sc.id) AS completed_sessions,
+                COALESCE(ROUND(AVG(sc.total_score), 1), 0) AS average_score,
+                COALESCE(MAX(sc.total_score), 0) AS best_score,
+                COALESCE(ROUND(AVG(ar.uniformity_percent), 1), 0) AS average_uniformity
+            FROM training_sessions s
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            LEFT JOIN ai_results ar ON ar.id = (
+                SELECT id FROM ai_results WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1
+            )
+            WHERE s.user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    completed = int(aggregate["completed_sessions"] or 0)
+    average_score = float(aggregate["average_score"] or 0)
+    best_score = int(aggregate["best_score"] or 0)
+    average_uniformity = float(aggregate["average_uniformity"] or 0)
+    achievements = min(12, max(0, best_score // 15 + completed // 5))
+    xp = completed * 100 + best_score * 5
+
+    return {
+        "user": row_to_dict(user),
+        "summary": {
+            "completed_sessions": completed,
+            "average_score": average_score,
+            "best_score": best_score,
+            "achievements": achievements,
+            "average_uniformity": average_uniformity,
+            "xp": xp,
+            "next_level_xp": 1500,
+        },
+    }
+
+
+def build_user_sessions(user_id: int = 1, limit: int = 25) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                s.id,
+                s.mode,
+                s.vessel_size,
+                s.goal,
+                s.started_at,
+                s.ended_at,
+                s.duration_seconds,
+                s.notes,
+                COALESCE(sc.total_score, 0) AS total_score,
+                COALESCE(sc.leak_score, 0) AS leak_score,
+                COALESCE(sc.pressure_score, 0) AS pressure_score,
+                COALESCE(sc.speed_score, 0) AS speed_score,
+                COALESCE(sc.ai_score, 0) AS ai_score,
+                COALESCE(ar.osats_score, 0) AS osats_score,
+                COALESCE(ar.stitch_count, 0) AS stitch_count,
+                COALESCE(ar.uniformity_percent, 0) AS uniformity_percent,
+                ar.feedback
+            FROM training_sessions s
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            LEFT JOIN ai_results ar ON ar.id = (
+                SELECT id FROM ai_results WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1
+            )
+            WHERE s.user_id = ? AND (sc.id IS NOT NULL OR ar.id IS NOT NULL)
+            ORDER BY s.started_at DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def build_ai_recommendation(summary: dict) -> str:
+    completed = int(summary["completed_sessions"] or 0)
+    average_score = float(summary["average_score"] or 0)
+    average_uniformity = float(summary["average_uniformity"] or 0)
+
+    if completed == 0:
+        return "Start your first session and upload a suture photo to unlock AI recommendations."
+    if average_uniformity and average_uniformity < 80:
+        return (
+            f"Main focus: stitch uniformity is averaging {average_uniformity:.0f}%. "
+            "Run 2-3 Ordinary 6mm sessions and focus on equal spacing before increasing speed."
+        )
+    if average_score < 75:
+        return (
+            f"Average score is {average_score:.1f}. Keep sessions slower and prioritize stable needle angle and spacing."
+        )
+    return (
+        "Progress is stable. Continue with mixed Ordinary and Adrenalin sessions to keep quality under pressure."
+    )
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
@@ -139,6 +237,67 @@ def get_latest_result() -> dict:
         "score": row_to_dict(score),
         "history": [dict(row) for row in reversed(history)],
     }
+
+
+@app.get("/api/dashboard/summary")
+def get_dashboard_summary(user_id: int = 1) -> dict:
+    profile = build_user_summary(user_id)
+    recent_sessions = build_user_sessions(user_id, limit=6)
+    with get_connection() as conn:
+        progress = conn.execute(
+            """
+            SELECT s.id, s.started_at, COALESCE(sc.total_score, 0) AS total_score
+            FROM training_sessions s
+            JOIN scores sc ON sc.session_id = s.id
+            WHERE s.user_id = ?
+            ORDER BY s.started_at DESC
+            LIMIT 12
+            """,
+            (user_id,),
+        ).fetchall()
+
+    progress_rows = [dict(row) for row in reversed(progress)]
+
+    return {
+        "summary": profile["summary"],
+        "recommendation": build_ai_recommendation(profile["summary"]),
+        "recent_sessions": recent_sessions,
+        "progress": progress_rows,
+    }
+
+
+@app.get("/api/users/{user_id}/profile")
+def get_user_profile(user_id: int) -> dict:
+    profile = build_user_summary(user_id)
+    sessions = build_user_sessions(user_id, limit=5)
+    summary = profile["summary"]
+
+    skills = {
+        "suture_quality": int(summary["average_score"] or 0),
+        "speed": int(sum(row["speed_score"] for row in sessions) / len(sessions)) if sessions else 0,
+        "pressure": int(sum(row["pressure_score"] for row in sessions) / len(sessions)) if sessions else 0,
+        "leak_control": int(sum(row["leak_score"] for row in sessions) / len(sessions)) if sessions else 0,
+        "uniformity": int(summary["average_uniformity"] or 0),
+    }
+    achievements = [
+        {"name": "First suture", "unlocked": summary["completed_sessions"] >= 1},
+        {"name": "Good result", "unlocked": summary["best_score"] >= 80},
+        {"name": "AI evaluator", "unlocked": summary["best_score"] >= 90},
+        {"name": "Consistent practice", "unlocked": summary["completed_sessions"] >= 5},
+        {"name": "Expert", "unlocked": summary["xp"] >= summary["next_level_xp"]},
+    ]
+
+    return {
+        **profile,
+        "skills": skills,
+        "achievements": achievements,
+        "recent_sessions": sessions,
+    }
+
+
+@app.get("/api/users/{user_id}/sessions")
+def get_user_sessions(user_id: int, limit: int = 25) -> dict:
+    return {"sessions": build_user_sessions(user_id, limit=limit)}
 
 
 @app.post("/api/ai/analyze-suture")

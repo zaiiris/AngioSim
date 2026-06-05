@@ -790,10 +790,11 @@ document.addEventListener('click', function(e) {
 
 </script>
 <script>
+const API_BASE = 'http://localhost:8000';
 const ctx = document.getElementById('progressChart').getContext('2d');
 const grad = ctx.createLinearGradient(0,0,0,170);
 grad.addColorStop(0,'rgba(0,217,245,.25)'); grad.addColorStop(1,'rgba(0,217,245,0)');
-new Chart(ctx, {
+const progressChart = new Chart(ctx, {
   type:'line',
   data:{
     labels:['С1','С2','С3','С4','С5','С6','С7','С8','С9','С10','С11','С12'],
@@ -814,6 +815,110 @@ new Chart(ctx, {
   }
 });
 
+function setStatCard(index, value, trend) {
+  const card = document.querySelectorAll('.scard')[index];
+  if (!card) return;
+  const val = card.querySelector('.scard-val');
+  const trendEl = card.querySelector('.scard-trend');
+  if (val) val.textContent = value;
+  if (trendEl && trend) trendEl.textContent = trend;
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+}
+
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = safeSeconds % 60;
+  return minutes + ':' + String(rest).padStart(2, '0');
+}
+
+function scoreClass(score) {
+  if (score >= 85) return 'hs-g';
+  if (score >= 70) return 'hs-c';
+  if (score >= 55) return 'hs-y';
+  return 'hs-r';
+}
+
+function updateWelcome(summary) {
+  const xp = Number(summary.xp) || 0;
+  const next = Number(summary.next_level_xp) || 1500;
+  const pct = Math.max(0, Math.min(100, Math.round((xp / next) * 100)));
+  const xpText = document.querySelector('.w-level span[style*="font-size"]');
+  const labels = document.querySelectorAll('.w-xp-labels span');
+  const bar = document.querySelector('.w-xp-wrap .bar');
+  if (xpText) xpText.textContent = xp + ' XP';
+  if (labels[0]) labels[0].textContent = xp + ' XP';
+  if (labels[1]) labels[1].textContent = next + ' → Advanced';
+  if (bar) bar.style.width = pct + '%';
+}
+
+function updateRecommendation(data) {
+  const sub = document.querySelector('.ai-tip-sub');
+  const text = document.querySelector('.ai-tip-text');
+  if (sub) sub.textContent = 'На основе ' + data.summary.completed_sessions + ' сессий';
+  if (text) text.textContent = data.recommendation;
+}
+
+function renderRecentSessions(sessions) {
+  const history = document.getElementById('history');
+  if (!history || !sessions.length) return;
+  history.innerHTML = sessions.map(session => {
+    const score = Math.round(Number(session.total_score) || 0);
+    const osats = Number(session.osats_score || 0).toFixed(1);
+    return `
+      <div class="hcard" onclick="window.location.href='results.html'">
+        <div class="hcard-top">
+          <div class="hcard-score ${scoreClass(score)}">${score}</div>
+          <div class="hcard-date">${formatDate(session.started_at)}<br>#${session.id}</div>
+        </div>
+        <div class="hcard-mode"><span class="badge">${session.mode || '—'}</span></div>
+        <div class="hcard-vessel">${session.vessel_size || '—'} · ${formatDuration(session.duration_seconds)} мин</div>
+        <div class="hcard-bar">
+          <div class="hcard-bar-lbl"><span>OSATS</span><span class="mono cg">${osats}/5</span></div>
+          <div class="bar-wrap"><div class="bar bar-c" style="width:${score}%"></div></div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:8px">${session.stitch_count || 0} стежков · ${session.uniformity_percent || 0}% равномерность</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateProgress(progress) {
+  if (!progress || !progress.length) return;
+  progressChart.data.labels = progress.map(item => 'С' + item.id);
+  progressChart.data.datasets[0].data = progress.map(item => Math.round(Number(item.total_score) || 0));
+  progressChart.update();
+}
+
+function updateDashboard(data) {
+  const summary = data.summary || {};
+  setStatCard(0, summary.completed_sessions || 0, 'сохранено в БД');
+  setStatCard(1, Number(summary.average_score || 0).toFixed(1), 'среднее по сессиям');
+  setStatCard(2, summary.best_score || 0, 'лучший сохраненный балл');
+  setStatCard(3, summary.achievements || 0, 'расчет по прогрессу');
+  updateWelcome(summary);
+  updateRecommendation(data);
+  renderRecentSessions(data.recent_sessions || []);
+  updateProgress(data.progress || []);
+}
+
+async function loadDashboardSummary() {
+  try {
+    const response = await fetch(API_BASE + '/api/dashboard/summary');
+    if (!response.ok) throw new Error('Dashboard API unavailable');
+    const data = await response.json();
+    updateDashboard(data);
+  } catch (err) {
+    console.warn('Using static dashboard demo:', err.message);
+  }
+}
+
 function dashSearch(q) {
   q = q.toLowerCase();
   const wrap = document.getElementById('dash-search-wrap');
@@ -829,6 +934,8 @@ function scrollRow(id, dir) {
   const el = document.getElementById(id);
   el.scrollBy({ left: dir * 260, behavior: 'smooth' });
 }
+
+loadDashboardSummary();
 </script>
 </body>
 </html>
