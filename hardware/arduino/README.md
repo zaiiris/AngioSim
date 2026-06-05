@@ -43,6 +43,26 @@ I2C - 16x2 LCD, address 0x27
 - starts circulation with `D7`;
 - stops when target volume is reached, unless continuous mode is enabled;
 - also stops with `D6`;
-- shows current volume, target volume, menu values, and cycle count on LCD.
+- shows current volume, target volume, menu values, and cycle count on LCD;
+- emits AngioSim Serial JSON once per second at `115200` baud.
 
-The current sketch does not yet send Serial JSON to the backend. That is the next integration step.
+## Serial telemetry
+
+Example line:
+
+```json
+{"device_id":"heart-pulse-v1","events":[{"sensor_name":"pulse_count","value":840,"unit":"pulses"},{"sensor_name":"volume","value":0.300,"unit":"L"},{"sensor_name":"target_volume","value":0.500,"unit":"L"},{"sensor_name":"circulation","value":1,"unit":"state"}]}
+```
+
+This telemetry does not control the trainer. It only reports current values to a PC over USB. The PC bridge adds the active `session_id` and posts the data to the backend.
+
+## Arduino IDE vs FLProg
+
+You can move to Arduino IDE, but uploading a sketch from Arduino IDE replaces the full program currently stored in the Arduino Uno flash memory. The old program is not partially edited on the board; the whole firmware image is overwritten.
+
+For now this repository keeps both:
+
+- `heart_pulse_flprog_generated.ino` as the current firmware source with a minimal Serial JSON addition;
+- `../flprog/heart_pulse.flp` as the visual FLProg source.
+
+If you continue editing in FLProg, exporting again may overwrite the manual Serial telemetry block. In that case, reapply the telemetry block or move the project fully to Arduino IDE.
