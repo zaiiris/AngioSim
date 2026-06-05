@@ -757,6 +757,7 @@ function selGoal(g) {
 
 /* ── SESSION START ───────────────────────────────────── */
 const API_BASE = 'http://localhost:8000';
+const AUTH_USER = JSON.parse(localStorage.getItem('as_user') || '{"id":1,"role":"student"}');
 let currentSessionId = null;
 let elapsed = 0, timerInt, sensorInt;
 const flowHistory = [], pressHistory = [];
@@ -768,7 +769,7 @@ async function startSession() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: 1,
+        user_id: AUTH_USER.id || 1,
         mode: selModeVal,
         vessel_size: selVesselVal,
         goal: selGoalVal
@@ -928,7 +929,15 @@ async function sendPhotoForAnalysis(file) {
     const result = await response.json();
     analyzeAI(result);
   } catch (err) {
-    alert('Could not analyze photo. Check that the backend is running.');
+    alert('Backend/AI is unavailable. A demo analysis will be shown, not a real AI result.');
+    analyzeAI({
+      osats_score: 3.6,
+      stitch_count: 8,
+      uniformity_percent: 74,
+      feedback: 'Demo analysis only: backend or AI model is unavailable. Start FastAPI and retry for a real result.',
+      is_demo_result: true,
+      warning: 'Demo analysis is shown because backend/AI is unavailable.'
+    });
   } finally {
     document.getElementById('cam-loading').style.display = 'none';
   }
@@ -941,7 +950,9 @@ function analyzeAI(result) {
   document.getElementById('ai-osats-num').textContent = osats;
   document.getElementById('ai-stitches').textContent  = stitchCount;
   document.getElementById('ai-uni').textContent = uni + '%';
-  document.getElementById('ai-fb-text').textContent   = result.feedback;
+  document.getElementById('ai-fb-text').textContent = result.warning
+    ? 'Warning: ' + result.warning + ' ' + result.feedback
+    : result.feedback;
   // Update arc
   const pct = osats / 5;
   document.getElementById('osats-arc').style.strokeDashoffset = 314.16 * (1 - pct);

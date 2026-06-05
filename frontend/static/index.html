@@ -82,18 +82,18 @@
       <div id="form-login">
         <div class="form-group">
           <label class="lbl" data-t="login_email">Email</label>
-          <input class="inp" type="email" value="ziyada@angiosim.kz" data-tp="login_email">
+          <input class="inp" id="login-email" type="email" value="ziada@angiosim.local" data-tp="login_email">
         </div>
         <div class="form-group">
           <label class="lbl" data-t="login_pass">Пароль</label>
-          <input class="inp" type="password" value="••••••••">
+          <input class="inp" id="login-password" type="password" value="demo">
         </div>
-        <button class="btn btn-primary btn-lg btn-full mb12" onclick="window.location.href='dashboard.html'">
+        <button class="btn btn-primary btn-lg btn-full mb12" onclick="loginUser()">
           <i class="fa-solid fa-arrow-right-to-bracket"></i>
           <span data-t="login_btn">Войти</span>
         </button>
         <div class="sep-line">или</div>
-        <button class="btn btn-ghost btn-full" onclick="window.location.href='dashboard.html'">
+        <button class="btn btn-ghost btn-full" onclick="demoLogin('student')">
           <i class="fa-solid fa-flask"></i>
           <span data-t="demo_btn">Демо — войти как студент</span>
         </button>
@@ -117,18 +117,18 @@
           </div>
         </div>
         <div class="form-row-2">
-          <div class="form-group"><label class="lbl" data-t="reg_name">Имя и фамилия</label><input class="inp" data-tp="reg_name"></div>
-          <div class="form-group"><label class="lbl" data-t="login_email">Email</label><input class="inp" type="email" data-tp="login_email"></div>
+          <div class="form-group"><label class="lbl" data-t="reg_name">Имя и фамилия</label><input class="inp" id="reg-name" data-tp="reg_name"></div>
+          <div class="form-group"><label class="lbl" data-t="login_email">Email</label><input class="inp" id="reg-email" type="email" data-tp="login_email"></div>
         </div>
         <div class="form-group">
           <label class="lbl" data-t="reg_uni">Университет</label>
-          <input class="inp" placeholder="NIS EMN Туркестан" data-tp="reg_uni">
+          <input class="inp" id="reg-university" placeholder="NIS EMN Туркестан" data-tp="reg_uni">
         </div>
         <div class="form-group">
           <label class="lbl" data-t="login_pass">Пароль</label>
-          <input class="inp" type="password">
+          <input class="inp" id="reg-password" type="password">
         </div>
-        <button class="btn btn-primary btn-lg btn-full" onclick="window.location.href='dashboard.html'">
+        <button class="btn btn-primary btn-lg btn-full" onclick="registerUser()">
           <i class="fa-solid fa-user-plus"></i>
           <span data-t="reg_btn">Создать аккаунт</span>
         </button>
@@ -616,6 +616,50 @@ function showTab(t) {
 function pickRole(el) {
   document.querySelectorAll('.role-opt').forEach(r => r.classList.remove('on'));
   el.classList.add('on');
+}
+const API_BASE = 'http://localhost:8000';
+
+function saveAuth(user) {
+  localStorage.setItem('as_user', JSON.stringify(user));
+  window.location.href = user.role === 'teacher' ? 'teacher.html' : 'dashboard.html';
+}
+
+async function loginUser() {
+  const email = document.getElementById('login-email').value;
+  try {
+    const response = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error('Login failed');
+    saveAuth((await response.json()).user);
+  } catch (err) {
+    alert('Пользователь не найден. Используйте demo вход или регистрацию.');
+  }
+}
+
+async function demoLogin(role) {
+  const response = await fetch(API_BASE + '/api/auth/demo?role=' + role);
+  saveAuth((await response.json()).user);
+}
+
+async function registerUser() {
+  const activeRole = document.querySelector('.role-opt.on .role-name');
+  const roleText = activeRole ? activeRole.textContent.toLowerCase() : '';
+  const payload = {
+    full_name: document.getElementById('reg-name').value,
+    email: document.getElementById('reg-email').value,
+    university: document.getElementById('reg-university').value,
+    role: roleText.includes('teacher') || roleText.includes('преп') || roleText.includes('оқыт') ? 'teacher' : 'student'
+  };
+  const response = await fetch(API_BASE + '/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) return alert('Заполните имя и email.');
+  saveAuth((await response.json()).user);
 }
 // counters
 function animCount(el, target) {

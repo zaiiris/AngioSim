@@ -580,12 +580,67 @@ document.addEventListener('click', function(e) {
 
 </script>
 <script>
+const API_BASE = 'http://localhost:8000';
+const AUTH_USER = JSON.parse(localStorage.getItem('as_user') || '{"id":1}');
+let leaderboardRows = [];
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function levelClass(level) {
+  return { Expert: 'lv-e', Advanced: 'lv-a', Intermediate: 'lv-i', Beginner: 'lv-b' }[level] || 'lv-b';
+}
+
+function rankEmoji(index) {
+  return ['🥇', '🥈', '🥉'][index] || '#' + (index + 1);
+}
+
+function metricFor(row, type) {
+  if (type === 'xp') return row.xp || 0;
+  if (type === 'active') return row.completed_sessions || 0;
+  return Number(row.average_score || 0).toFixed(1);
+}
+
+function renderLeaderboard(type = 'score') {
+  const tbody = document.querySelector('tbody');
+  if (!tbody || !leaderboardRows.length) return;
+  const rows = [...leaderboardRows].sort((a, b) => Number(metricFor(b, type)) - Number(metricFor(a, type)));
+  tbody.innerHTML = rows.map((row, index) => {
+    const isCurrent = row.id === AUTH_USER.id;
+    return `
+      <tr class="${isCurrent ? 'you-row' : ''}">
+        <td><span class="rank-em">${rankEmoji(index)}</span></td>
+        <td><div class="fc gap12"><div class="av" style="background:rgba(52,211,153,.16);color:var(--cyan)">${escapeHtml(row.initials)}</div><div><div class="fw fc gap8" style="font-size:13px">${escapeHtml(row.full_name)} ${isCurrent ? '<span class="badge badge-c" style="font-size:9px">Ты</span>' : ''}</div><div class="c3 fs11">@${escapeHtml((row.email || '').split('@')[0])}</div></div></div></td>
+        <td class="c3 fs12">${escapeHtml(row.university || '—')}</td>
+        <td><span class="lv ${levelClass(row.level)}">${escapeHtml(row.level)}</span></td>
+        <td><span class="score-pill">${metricFor(row, type)}</span></td>
+        <td><span class="${row.trend === 'up' ? 'trend-up' : 'trend-down'}">${row.trend === 'up' ? '↑ stable' : 'practice'}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function showTab(type, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   btn.classList.add('on');
   const labels = { score: 'Средний балл', xp: 'XP', active: 'Сессий' };
   document.getElementById('col-hd').textContent = labels[type];
+  renderLeaderboard(type);
 }
+
+async function loadLeaderboard() {
+  try {
+    const response = await fetch(API_BASE + '/api/leaderboard');
+    if (!response.ok) throw new Error('Leaderboard API unavailable');
+    leaderboardRows = (await response.json()).students || [];
+    renderLeaderboard('score');
+  } catch (err) {
+    console.warn('Using static leaderboard demo:', err.message);
+  }
+}
+
+loadLeaderboard();
 </script>
 </body>
 </html>

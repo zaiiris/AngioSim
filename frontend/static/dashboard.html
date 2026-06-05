@@ -791,6 +791,7 @@ document.addEventListener('click', function(e) {
 </script>
 <script>
 const API_BASE = 'http://localhost:8000';
+const AUTH_USER = JSON.parse(localStorage.getItem('as_user') || '{"id":1,"role":"student"}');
 const ctx = document.getElementById('progressChart').getContext('2d');
 const grad = ctx.createLinearGradient(0,0,0,170);
 grad.addColorStop(0,'rgba(0,217,245,.25)'); grad.addColorStop(1,'rgba(0,217,245,0)');
@@ -910,7 +911,7 @@ function updateDashboard(data) {
 
 async function loadDashboardSummary() {
   try {
-    const response = await fetch(API_BASE + '/api/dashboard/summary');
+    const response = await fetch(API_BASE + '/api/dashboard/summary?user_id=' + (AUTH_USER.id || 1));
     if (!response.ok) throw new Error('Dashboard API unavailable');
     const data = await response.json();
     updateDashboard(data);

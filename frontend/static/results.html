@@ -630,6 +630,7 @@ document.addEventListener('click', function(e) {
 </script>
 <script>
 const API_BASE = 'http://localhost:8000';
+const AUTH_USER = JSON.parse(localStorage.getItem('as_user') || '{"id":1,"role":"student"}');
 
 function clampScore(value) {
   return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
@@ -772,7 +773,7 @@ function updateResultsPage(data) {
 
 async function loadLatestResult() {
   try {
-    const response = await fetch(API_BASE + '/api/results/latest');
+    const response = await fetch(API_BASE + '/api/results/latest?user_id=' + (AUTH_USER.id || 1));
     if (!response.ok) throw new Error('No saved result');
     const data = await response.json();
     updateResultsPage(data);

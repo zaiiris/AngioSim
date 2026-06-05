@@ -638,6 +638,7 @@ const LESSONS=[
   {emoji:"📐",cat:"Основы",catColor:"var(--cyan)",title:"Хирургические узлы и нити",desc:"Типы швов, техника завязывания, выбор нити — базовый модуль для начинающих.",dur:"15 мин",level:"Beginner",xp:70,prog:100,chapters:[{done:true,title:"Типы нитей",dur:"4:00"},{done:true,title:"Хирургический узел",dur:"4:30"},{done:true,title:"Непрерывный шов",dur:"4:00"},{done:true,title:"Практика",dur:"2:30"}]}
 ];
 
+const API_BASE = 'http://localhost:8000';
 let currentFilter='all';
 function openLesson(idx){
   const l=LESSONS[idx];
@@ -662,6 +663,64 @@ function openLesson(idx){
   document.getElementById('lesson-modal').classList.add('open');
   document.body.style.overflow='hidden';
 }
+
+function lessonCategory(category) {
+  return {
+    basics: { label: 'Основы', color: 'var(--green)', emoji: '🫀', filter: 'basics' },
+    technique: { label: 'Техника', color: 'var(--cyan)', emoji: '🩺', filter: 'technique' },
+    theory: { label: 'Основы', color: 'var(--green)', emoji: '📐', filter: 'basics' },
+    ai: { label: 'ИИ-анализ', color: 'var(--yellow)', emoji: '🧠', filter: 'ai' }
+  }[category] || { label: category, color: 'var(--cyan)', emoji: '▶', filter: category };
+}
+
+function renderLessons(lessons) {
+  const grid = document.querySelector('.lesson-grid');
+  if (!grid || !lessons.length) return;
+  LESSONS.length = 0;
+  grid.innerHTML = lessons.map((lesson, index) => {
+    const cat = lessonCategory(lesson.category);
+    const progress = index % 3 === 0 ? 100 : index % 3 === 1 ? 35 : 0;
+    LESSONS.push({
+      emoji: cat.emoji,
+      cat: cat.label,
+      catColor: cat.color,
+      title: lesson.title,
+      desc: lesson.description || '',
+      dur: (lesson.duration_minutes || 0) + ' мин',
+      level: lesson.level || 'Beginner',
+      xp: 60 + (lesson.duration_minutes || 0) * 3,
+      prog: progress,
+      chapters: [
+        { done: progress >= 35, title: 'Теория', dur: '5:00' },
+        { done: progress >= 70, title: 'Демонстрация', dur: '7:00' },
+        { done: progress === 100, title: 'Практика', dur: '8:00' }
+      ]
+    });
+    return `
+      <div class="lesson-card-full" data-cat="${cat.filter}" data-done="${progress === 100}" onclick="openLesson(${index})">
+        <div class="lesson-thumb" style="background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.04))">${cat.emoji}<div class="lesson-thumb-overlay"><div class="play-btn-big"><i class="fa-solid fa-play"></i></div></div></div>
+        <div class="lesson-body">
+          <div class="lesson-category" style="color:${cat.color}">${cat.label}</div>
+          <div class="lesson-title">${lesson.title}</div>
+          <div class="lesson-desc">${lesson.description || ''}</div>
+          <div class="lesson-meta"><span class="lesson-meta-item"><i class="fa-solid fa-clock"></i> ${lesson.duration_minutes || 0} мин</span><span class="lesson-meta-item"><i class="fa-solid fa-signal"></i> ${lesson.level || 'Beginner'}</span><span class="lesson-meta-item"><i class="fa-solid fa-book-open"></i> 3 главы</span></div>
+          <div class="lesson-prog-row"><span class="lesson-prog-label">Прогресс</span><div class="lesson-prog-bar"><div class="lesson-prog-fill" style="width:${progress}%;background:${cat.color}"></div></div><span class="lesson-prog-pct">${progress}%</span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  filterLessons();
+}
+
+async function loadLessons() {
+  try {
+    const response = await fetch(API_BASE + '/api/lessons');
+    if (!response.ok) throw new Error('Lessons API unavailable');
+    renderLessons((await response.json()).lessons || []);
+  } catch (err) {
+    console.warn('Using static lessons demo:', err.message);
+  }
+}
 function closeLesson(){document.getElementById('lesson-modal').classList.remove('open');document.body.style.overflow='';}
 function closeIfBg(e){if(e.target===e.currentTarget)closeLesson();}
 function setFilter(btn,cat){
@@ -681,6 +740,7 @@ function filterLessons(){
   document.getElementById('empty-state').style.display=v?'none':'block';
   document.getElementById('search-count').textContent=q?v+' урок(ов)':'';
 }
+loadLessons();
 </script>
 </body>
 </html>
