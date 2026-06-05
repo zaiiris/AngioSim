@@ -11,3 +11,14 @@
 .feedback-form { background:var(--bg3); border:1px solid var(--b1); border-radius:var(--r2); padding:20px; margin-top:16px; display:none; }
 
 .feedback-form.open { display:block; }
+
+.teacher-session-list { display:flex; flex-direction:column; gap:10px; }
+
+.teacher-session-row { background:var(--bg3); border:1px solid var(--b1); border-radius:var(--r); padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+
+.teacher-session-metrics { display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end; font-size:12px; }
+
+@media (max-width: 760px) {
+  .teacher-session-row { align-items:flex-start; flex-direction:column; }
+  .teacher-session-metrics { justify-content:flex-start; }
+}
