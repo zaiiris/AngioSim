@@ -950,18 +950,22 @@ function analyzeAI(result) {
 }
 
 /* ── END SESSION ─────────────────────────────────────── */
-function endSession() {
+async function endSession() {
   if (!confirm('Завершить сессию и перейти к результатам?')) return;
   clearInterval(timerInt); clearInterval(sensorInt);
   if (currentSessionId) {
-    fetch(API_BASE + '/api/sessions/' + currentSessionId + '/finish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        duration_seconds: elapsed,
-        notes: document.getElementById('notes-area').value
-      })
-    });
+    try {
+      await fetch(API_BASE + '/api/sessions/' + currentSessionId + '/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          duration_seconds: elapsed,
+          notes: document.getElementById('notes-area').value
+        })
+      });
+    } catch (err) {
+      console.warn('Could not save session finish before navigation:', err.message);
+    }
   }
   window.location.href = 'results.html';
 }

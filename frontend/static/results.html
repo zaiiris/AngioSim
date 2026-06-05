@@ -629,8 +629,160 @@ document.addEventListener('click', function(e) {
 
 </script>
 <script>
+const API_BASE = 'http://localhost:8000';
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = safeSeconds % 60;
+  return minutes + ':' + String(rest).padStart(2, '0');
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function gradeFor(score) {
+  if (score >= 85) return { text: 'Отлично', className: 's-ex' };
+  if (score >= 70) return { text: 'Хорошо', className: 's-gd' };
+  if (score >= 55) return { text: 'Удовлетворительно', className: 's-ok' };
+  return { text: 'Нужна практика', className: 's-bd' };
+}
+
+function setMetric(index, value, unit) {
+  const metric = document.querySelectorAll('.metric-item .metric-val')[index];
+  if (!metric) return;
+  metric.innerHTML = String(value) + '<span class="metric-unit">' + unit + '</span>';
+}
+
+function setBreakdownRow(index, value) {
+  const row = document.querySelectorAll('.br-row')[index];
+  if (!row) return;
+  const score = clampScore(value);
+  const bar = row.querySelector('.bar');
+  const label = row.querySelector('.br-val');
+  if (bar) bar.style.width = score + '%';
+  if (label) label.textContent = score;
+}
+
+function aiMetrics(aiResult) {
+  if (!aiResult || !aiResult.raw_predictions) return {};
+  return aiResult.raw_predictions.metrics || {};
+}
+
+function updateResultsPage(data) {
+  const session = data.session || {};
+  const ai = data.ai_result || {};
+  const score = data.score || {};
+  const metrics = aiMetrics(ai);
+  const totalScore = clampScore(score.total_score || ((ai.osats_score || 0) / 5 * 100));
+  const aiScore = clampScore(score.ai_score || ((ai.osats_score || 0) / 5 * 100));
+  const uniformity = clampScore(ai.uniformity_percent);
+  const grade = gradeFor(totalScore);
+
+  const topTitle = document.querySelector('.topbar-left h1');
+  const topSub = document.querySelector('.topbar-left p');
+  if (topTitle) topTitle.textContent = 'Результаты сессии #' + session.id;
+  if (topSub) {
+    topSub.textContent = [
+      formatDate(session.started_at),
+      session.mode || '—',
+      session.vessel_size || '—'
+    ].join(' · ');
+  }
+
+  const bigScore = document.querySelector('.big-score');
+  if (bigScore) {
+    bigScore.className = 'big-score ' + grade.className;
+    bigScore.innerHTML = totalScore + '<span class="score-denom">/100</span>';
+  }
+
+  const gradeLabel = document.querySelector('.grade-label');
+  if (gradeLabel) gradeLabel.textContent = grade.text;
+
+  setMetric(0, Number(ai.osats_score || 0).toFixed(1), '/ 5');
+  setMetric(1, score.leak_score ? (100 - score.leak_score).toFixed(0) : '—', 'risk');
+  setMetric(2, score.pressure_score || '—', '/100');
+  setMetric(3, formatDuration(session.duration_seconds), 'мин');
+  setMetric(4, ai.stitch_count || 0, 'шт');
+  setMetric(5, uniformity, '%');
+
+  setBreakdownRow(0, aiScore);
+  setBreakdownRow(1, score.leak_score || 85);
+  setBreakdownRow(2, score.pressure_score || 85);
+  setBreakdownRow(3, score.speed_score || 82);
+  setBreakdownRow(4, uniformity);
+
+  const comparisonValues = document.querySelectorAll('.comparison-row span:last-child');
+  const historyScores = (data.history || []).map(item => clampScore(item.total_score)).filter(Boolean);
+  const previousScore = historyScores.length > 1 ? historyScores[historyScores.length - 2] : null;
+  const bestScore = historyScores.length ? Math.max(...historyScores) : totalScore;
+  if (comparisonValues[0]) comparisonValues[0].textContent = previousScore === null ? '—' : previousScore;
+  if (comparisonValues[1]) {
+    const delta = previousScore === null ? 0 : totalScore - previousScore;
+    comparisonValues[1].textContent = (delta >= 0 ? '+' : '') + delta + ' ↑';
+  }
+  if (comparisonValues[2]) comparisonValues[2].textContent = bestScore;
+
+  const strongItems = document.querySelectorAll('.strength-item.si-good');
+  if (strongItems[0]) strongItems[0].textContent = '✅ OSATS ' + Number(ai.osats_score || 0).toFixed(1) + '/5 по анализу ИИ';
+  if (strongItems[1]) strongItems[1].textContent = '✅ ' + (ai.stitch_count || 0) + ' обнаруженных стежков';
+  if (strongItems[2]) strongItems[2].textContent = '✅ Confidence модели: ' + Math.round((ai.confidence || 0) * 100) + '%';
+
+  const weakItems = document.querySelectorAll('.strength-item.si-bad');
+  if (weakItems[0]) weakItems[0].textContent = '⚠️ Равномерность стежков ' + uniformity + '%; цель >90%';
+  if (weakItems[1]) {
+    const gapCount = Array.isArray(metrics.gaps) ? metrics.gaps.length : 0;
+    weakItems[1].textContent = gapCount ? '⚠️ Возможные пропуски: ' + gapCount : '✅ Явные пропуски не обнаружены';
+    weakItems[1].className = gapCount ? 'strength-item si-bad' : 'strength-item si-good';
+  }
+
+  const feedbackBox = document.querySelector('.card div[style*="border-left:3px solid var(--cyan)"]');
+  if (feedbackBox) feedbackBox.textContent = ai.feedback || 'ИИ-анализ пока недоступен для этой сессии.';
+
+  if (radarChart) {
+    radarChart.data.datasets[0].data = [
+      aiScore,
+      score.speed_score || 82,
+      score.pressure_score || 85,
+      score.leak_score || 85,
+      uniformity
+    ];
+    radarChart.update();
+  }
+
+  if (historyChart && data.history) {
+    historyChart.data.labels = data.history.map(item => 'С' + item.id);
+    historyChart.data.datasets[0].data = data.history.map(item => clampScore(item.total_score));
+    historyChart.update();
+  }
+}
+
+async function loadLatestResult() {
+  try {
+    const response = await fetch(API_BASE + '/api/results/latest');
+    if (!response.ok) throw new Error('No saved result');
+    const data = await response.json();
+    updateResultsPage(data);
+  } catch (err) {
+    console.warn('Using static demo results:', err.message);
+  }
+}
+
 // Radar chart
-new Chart(document.getElementById('radarChart'), {
+const radarChart = new Chart(document.getElementById('radarChart'), {
   type: 'radar',
   data: {
     labels: ['Техника шва', 'Скорость', 'Давление', 'Утечка', 'Стабильность'],
@@ -668,7 +820,7 @@ new Chart(document.getElementById('radarChart'), {
 const hctx = document.getElementById('historyChart').getContext('2d');
 const hgrad = hctx.createLinearGradient(0,0,0,240);
 hgrad.addColorStop(0,'rgba(52,211,153,.2)'); hgrad.addColorStop(1,'rgba(0,217,245,0)');
-new Chart(hctx, {
+const historyChart = new Chart(hctx, {
   type: 'line',
   data: {
     labels: ['С8','С9','С10','С11','С12','С13'],
@@ -692,6 +844,8 @@ new Chart(hctx, {
     }
   }
 });
+
+loadLatestResult();
 </script>
 </body>
 </html>
