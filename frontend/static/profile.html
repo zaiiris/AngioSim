@@ -587,6 +587,7 @@ document.addEventListener('click', function(e) {
 })();
 
 const API_BASE = 'http://localhost:8000';
+const AUTH_USER = JSON.parse(localStorage.getItem('as_user') || '{"id":1,"role":"student"}');
 const rctx = document.getElementById('radarChart').getContext('2d');
 const radarChart = new Chart(rctx, {
   type:'radar',
@@ -689,7 +690,7 @@ function updateProfile(data) {
 }
 async function loadProfile() {
   try {
-    const response = await fetch(API_BASE + '/api/users/1/profile');
+    const response = await fetch(API_BASE + '/api/users/' + (AUTH_USER.id || 1) + '/profile');
     if (!response.ok) throw new Error('Profile API unavailable');
     const data = await response.json();
     updateProfile(data);

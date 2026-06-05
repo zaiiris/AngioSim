@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -273,6 +274,61 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@app.post("/api/auth/login")
+def login(payload: dict) -> dict:
+    email = str(payload.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    with get_connection() as conn:
+        user = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+    return {"user": row_to_dict(user)}
+
+
+@app.post("/api/auth/register")
+def register(payload: dict) -> dict:
+    full_name = str(payload.get("full_name") or "").strip()
+    email = str(payload.get("email") or "").strip().lower()
+    role = str(payload.get("role") or "student").strip().lower()
+    university = str(payload.get("university") or "AngioSim Demo").strip()
+    if role not in {"student", "teacher"}:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    if not full_name or not email:
+        raise HTTPException(status_code=400, detail="Name and email are required")
+
+    with get_connection() as conn:
+        try:
+            cur = conn.execute(
+                """
+                INSERT INTO users (full_name, email, role, university, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (full_name, email, role, university, utc_now()),
+            )
+            user_id = cur.lastrowid
+        except sqlite3.IntegrityError:
+            user = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
+            if user is None:
+                raise
+            return {"user": row_to_dict(user)}
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    return {"user": row_to_dict(user)}
+
+
+@app.get("/api/auth/demo")
+def demo_user(role: str = "student") -> dict:
+    email = "teacher@angiosim.local" if role == "teacher" else "ziada@angiosim.local"
+    with get_connection() as conn:
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if user is None:
+            raise HTTPException(status_code=404, detail="Demo user not found")
+    return {"user": row_to_dict(user)}
+
+
 @app.post("/api/sessions")
 def create_session(payload: dict) -> dict:
     user_id = int(payload.get("user_id") or 1)
@@ -342,7 +398,7 @@ def get_session(session_id: int) -> dict:
 
 
 @app.get("/api/results/latest")
-def get_latest_result() -> dict:
+def get_latest_result(user_id: int | None = None) -> dict:
     with get_connection() as conn:
         session = conn.execute(
             """
@@ -350,10 +406,12 @@ def get_latest_result() -> dict:
             FROM training_sessions s
             LEFT JOIN ai_results ar ON ar.session_id = s.id
             LEFT JOIN scores sc ON sc.session_id = s.id
-            WHERE ar.id IS NOT NULL OR sc.id IS NOT NULL
+            WHERE (ar.id IS NOT NULL OR sc.id IS NOT NULL)
+              AND (? IS NULL OR s.user_id = ?)
             ORDER BY started_at DESC
             LIMIT 1
-            """
+            """,
+            (user_id, user_id),
         ).fetchone()
         if session is None:
             raise HTTPException(status_code=404, detail="No saved results found")
@@ -371,9 +429,11 @@ def get_latest_result() -> dict:
             SELECT s.id, s.started_at, COALESCE(sc.total_score, 0) AS total_score
             FROM training_sessions s
             LEFT JOIN scores sc ON sc.session_id = s.id
+            WHERE (? IS NULL OR s.user_id = ?)
             ORDER BY s.started_at DESC
             LIMIT 6
-            """
+            """,
+            (user_id, user_id),
         ).fetchall()
 
     return {
@@ -520,6 +580,15 @@ async def analyze_suture(
         "confidence": analysis.confidence,
         "feedback": analysis.feedback,
         "total_score": total_score,
+        "analysis_mode": analysis.raw_predictions.get("mode", "unknown"),
+        "is_demo_result": analysis.raw_predictions.get("mode") == "mock",
+        "warning": (
+            "Demo analysis is shown because the real AI model could not process this photo."
+            if analysis.raw_predictions.get("mode") == "mock"
+            else "Real AI ran, but detected too few stitches. Try a clearer photo with the suture centered."
+            if analysis.stitch_count < 3
+            else analysis.raw_predictions.get("reason", "")
+        ),
         "raw_predictions": analysis.raw_predictions,
     }
 
