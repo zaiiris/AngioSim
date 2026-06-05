@@ -87,11 +87,20 @@ Optional future events:
 {"sensor_name": "flow", "value": 1.42, "unit": "L/min"}
 ```
 
-## Recommended Integration Path
+## Serial JSON
 
-1. Add `Serial.begin(115200)` to the Arduino sketch.
-2. Emit one compact JSON line every 500-1000 ms.
-3. Use a small desktop bridge script to read Arduino Serial and POST to `/api/hardware/events`.
-4. The bridge should inject the active `session_id`, because the current Arduino sketch does not know which web session is active.
+The Arduino sketch now emits one compact JSON line every 1000 ms over USB Serial at `115200` baud:
+
+```json
+{"device_id":"heart-pulse-v1","events":[{"sensor_name":"pulse_count","value":840,"unit":"pulses"},{"sensor_name":"volume","value":0.300,"unit":"L"},{"sensor_name":"target_volume","value":0.500,"unit":"L"},{"sensor_name":"circulation","value":1,"unit":"state"}]}
+```
+
+The Serial output is read-only telemetry. It does not change the existing circulation control logic.
+
+## Bridge Integration
+
+Use `hardware/bridge/serial_to_backend.py` to read Arduino Serial and POST to `/api/hardware/events`.
+
+The bridge injects the active `session_id`, because the current Arduino sketch does not know which web session is active.
 
 This keeps the Arduino simple and lets the web platform decide which training session receives the hardware data.

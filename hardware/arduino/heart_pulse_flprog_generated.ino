@@ -88,8 +88,10 @@ int _disp2oldLength = 0;
 bool _trgs2 = 0;
 bool _tempVariable_bool;
 int _tempVariable_int;
+unsigned long _asLastTelemetryMs = 0UL;
 void setup()
 {
+    Serial.begin(115200);
     pinMode(4, INPUT_PULLUP);
     pinMode(5, INPUT_PULLUP);
     pinMode(6, INPUT_PULLUP);
@@ -620,6 +622,28 @@ void loop()
     if((((((_gtv6) >= (_gtv5)) && (!((_menuValueArray_bool[0]))))) || (!(_bounseInputD6O)))) _trgs2 = 0;
     digitalWrite(13, _trgs2);
     digitalWrite(9, !(_trgs2));
+    angiosimSendTelemetry();
+}
+void angiosimSendTelemetry()
+{
+    if ((millis() - _asLastTelemetryMs) < 1000UL)
+    {
+        return;
+    }
+    _asLastTelemetryMs = millis();
+    Serial.print(F("{\"device_id\":\"heart-pulse-v1\",\"events\":["));
+    Serial.print(F("{\"sensor_name\":\"pulse_count\",\"value\":"));
+    Serial.print(_gtv3);
+    Serial.print(F(",\"unit\":\"pulses\"},"));
+    Serial.print(F("{\"sensor_name\":\"volume\",\"value\":"));
+    Serial.print(_gtv6, 3);
+    Serial.print(F(",\"unit\":\"L\"},"));
+    Serial.print(F("{\"sensor_name\":\"target_volume\",\"value\":"));
+    Serial.print(_gtv5, 3);
+    Serial.print(F(",\"unit\":\"L\"},"));
+    Serial.print(F("{\"sensor_name\":\"circulation\",\"value\":"));
+    Serial.print(_trgs2 ? 1 : 0);
+    Serial.println(F(",\"unit\":\"state\"}]}"));
 }
 String  _floatToStringWitRaz(float value, int raz)
 {
