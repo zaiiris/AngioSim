@@ -626,11 +626,12 @@ function saveAuth(user) {
 
 async function loginUser() {
   const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
   try {
     const response = await fetch(API_BASE + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, password })
     });
     if (!response.ok) throw new Error('Login failed');
     saveAuth((await response.json()).user);
@@ -651,6 +652,7 @@ async function registerUser() {
     full_name: document.getElementById('reg-name').value,
     email: document.getElementById('reg-email').value,
     university: document.getElementById('reg-university').value,
+    password: document.getElementById('reg-password').value,
     role: roleText.includes('teacher') || roleText.includes('преп') || roleText.includes('оқыт') ? 'teacher' : 'student'
   };
   const response = await fetch(API_BASE + '/api/auth/register', {

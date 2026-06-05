@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from datetime import datetime, timezone
@@ -25,13 +26,30 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def hash_password(password: str) -> str:
+    salt = "angiosim-demo-v1"
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000)
+    return f"pbkdf2_sha256${salt}${digest.hex()}"
+
+
 def init_db() -> None:
     with get_connection() as conn:
         try:
             conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+            ensure_schema_updates(conn)
             seed_demo_data(conn)
         except sqlite3.OperationalError as exc:
             if "readonly database" not in str(exc):
+                raise
+
+
+def ensure_schema_updates(conn: sqlite3.Connection) -> None:
+    user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+    if "password_hash" not in user_columns:
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc):
                 raise
 
 
@@ -49,11 +67,12 @@ def seed_demo_data(conn: sqlite3.Connection) -> None:
     ]
     conn.executemany(
         """
-        INSERT OR IGNORE INTO users (id, full_name, email, role, university, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO users (id, full_name, email, password_hash, role, university, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        [(user_id, name, email, role, university, now) for user_id, name, email, role, university in users],
+        [(user_id, name, email, hash_password("demo"), role, university, now) for user_id, name, email, role, university in users],
     )
+    conn.execute("UPDATE users SET password_hash = ? WHERE password_hash IS NULL", (hash_password("demo"),))
 
     lessons = [
         (1, "Vascular Anatomy", "basics", "Basic artery and vein structure", 18, "beginner"),
