@@ -481,6 +481,56 @@ def get_teacher_sessions(limit: int = 50) -> dict:
     return {"sessions": build_teacher_sessions(limit=limit)}
 
 
+@app.get("/api/lessons")
+def get_lessons() -> dict:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, title, category, description, duration_minutes, level
+            FROM lessons
+            ORDER BY id
+            """
+        ).fetchall()
+    return {"lessons": [dict(row) for row in rows]}
+
+
+@app.get("/api/leaderboard")
+def get_leaderboard() -> dict:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.university,
+                COUNT(sc.id) AS completed_sessions,
+                COALESCE(ROUND(AVG(sc.total_score), 1), 0) AS average_score,
+                COALESCE(MAX(sc.total_score), 0) AS best_score,
+                MAX(s.started_at) AS last_session_at
+            FROM users u
+            LEFT JOIN training_sessions s ON s.user_id = u.id
+            LEFT JOIN scores sc ON sc.session_id = s.id
+            WHERE u.role = 'student'
+            GROUP BY u.id
+            ORDER BY average_score DESC, completed_sessions DESC, u.full_name ASC
+            """
+        ).fetchall()
+
+    students = []
+    for row in rows:
+        student = dict(row)
+        completed = int(student["completed_sessions"] or 0)
+        average = float(student["average_score"] or 0)
+        student["initials"] = initials_for_name(student["full_name"])
+        student["level"] = level_for_score(average, completed)
+        student["xp"] = completed * 100 + int(student["best_score"] or 0) * 5
+        student["trend"] = "up" if average >= 75 else "needs_practice"
+        students.append(student)
+
+    return {"students": students}
+
+
 @app.get("/api/users/{user_id}/profile")
 def get_user_profile(user_id: int) -> dict:
     profile = build_user_summary(user_id)
