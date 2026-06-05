@@ -7,7 +7,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .ai_service import analysis_to_json, analyze_suture_image, save_upload
-from .database import get_connection, init_db, row_to_dict, utc_now
+from .database import get_connection, hash_password, init_db, row_to_dict, utc_now
 
 
 app = FastAPI(title="AngioSim API")
@@ -277,13 +277,14 @@ def health() -> dict:
 @app.post("/api/auth/login")
 def login(payload: dict) -> dict:
     email = str(payload.get("email") or "").strip().lower()
-    if not email:
-        raise HTTPException(status_code=400, detail="Email is required")
+    password = str(payload.get("password") or "")
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
 
     with get_connection() as conn:
         user = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
-        if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
+        if user is None or user["password_hash"] != hash_password(password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return {"user": row_to_dict(user)}
 
@@ -294,19 +295,20 @@ def register(payload: dict) -> dict:
     email = str(payload.get("email") or "").strip().lower()
     role = str(payload.get("role") or "student").strip().lower()
     university = str(payload.get("university") or "AngioSim Demo").strip()
+    password = str(payload.get("password") or "")
     if role not in {"student", "teacher"}:
         raise HTTPException(status_code=400, detail="Invalid role")
-    if not full_name or not email:
-        raise HTTPException(status_code=400, detail="Name and email are required")
+    if not full_name or not email or not password:
+        raise HTTPException(status_code=400, detail="Name, email, and password are required")
 
     with get_connection() as conn:
         try:
             cur = conn.execute(
                 """
-                INSERT INTO users (full_name, email, role, university, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO users (full_name, email, password_hash, role, university, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (full_name, email, role, university, utc_now()),
+                (full_name, email, hash_password(password), role, university, utc_now()),
             )
             user_id = cur.lastrowid
         except sqlite3.IntegrityError:
@@ -529,6 +531,38 @@ def get_leaderboard() -> dict:
         students.append(student)
 
     return {"students": students}
+
+
+@app.post("/api/hardware/events")
+def save_hardware_events(payload: dict) -> dict:
+    session_id = int(payload.get("session_id") or 0)
+    events = payload.get("events") or []
+    if session_id <= 0:
+        raise HTTPException(status_code=400, detail="session_id is required")
+    if not isinstance(events, list) or not events:
+        raise HTTPException(status_code=400, detail="events must be a non-empty list")
+
+    rows = []
+    for event in events:
+        sensor_name = str(event.get("sensor_name") or "").strip()
+        unit = str(event.get("unit") or "").strip()
+        if not sensor_name or "value" not in event or not unit:
+            raise HTTPException(status_code=400, detail="Each event needs sensor_name, value, and unit")
+        rows.append((session_id, sensor_name, float(event["value"]), unit, utc_now()))
+
+    with get_connection() as conn:
+        session = conn.execute("SELECT id FROM training_sessions WHERE id = ?", (session_id,)).fetchone()
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        conn.executemany(
+            """
+            INSERT INTO hardware_events (session_id, sensor_name, value, unit, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+
+    return {"saved": len(rows)}
 
 
 @app.get("/api/users/{user_id}/profile")

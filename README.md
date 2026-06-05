@@ -12,9 +12,42 @@ Project parts:
 - `docs/` - project documentation and architecture notes
 - `infra/` - deployment and environment setup
 
+## Run Locally
+
+Start the backend:
+
+```powershell
+.\start_backend.ps1
+```
+
+Start the frontend in another terminal:
+
+```powershell
+.\start_frontend.ps1
+```
+
+Open:
+
+```text
+http://127.0.0.1:8080/index.html
+```
+
+Demo users:
+
+```text
+ziada@angiosim.local / demo
+teacher@angiosim.local / demo
+```
+
+Optional API smoke check after the backend is running:
+
+```powershell
+.\smoke_check.ps1
+```
+
 ## Current State
 
-Right now the project contains the static HTML/CSS frontend prototype in:
+The project uses a static HTML/CSS frontend prototype in:
 
 `frontend/static/`
 
