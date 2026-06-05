@@ -1,21 +1,28 @@
-# AngioSim Platform
+# AngioSim
 
-Frontend prototype for AngioSim, an AI-assisted surgical training platform.
+AngioSim is a training platform for endovascular/surgical simulation.
 
-## Pages
+Project parts:
 
-- `index.html` - landing page
-- `dashboard.html` - student dashboard
-- `session.html` - training session
-- `results.html` - session results
-- `lessons.html` - video lessons
-- `leaderboard.html` - ranking
-- `profile.html` - user profile
-- `teacher.html` - teacher view
+- `frontend/` - user interface
+- `backend/` - API that will connect frontend, AI, database, and hardware data
+- `ai/` - model notebooks, datasets, and exported model files
+- `hardware/` - Arduino trainer code and device notes
+- `database/` - database schema, migrations, and seed data
+- `docs/` - project documentation and architecture notes
+- `infra/` - deployment and environment setup
 
-## Styles
+## Current State
 
-- `assets/css/styles.css` - shared styles
-- `assets/css/*.css` - page-specific styles
+Right now the project contains the static HTML/CSS frontend prototype in:
 
-Open `index.html` in a browser to start.
+`frontend/static/`
+
+Open `frontend/static/index.html` to view the first page.
+
+## Future Flow
+
+1. Arduino trainer sends sensor/action data.
+2. Backend receives and stores that data.
+3. AI model analyzes images/session data.
+4. Frontend shows training, results, profile, leaderboard, and teacher views.
