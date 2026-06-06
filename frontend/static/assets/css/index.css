@@ -131,6 +131,18 @@ body::before { display: none; }
 
 .auth-sub { font-size: 14px; color: var(--t3); margin-bottom: 26px; }
 
+.auth-message {
+  min-height: 18px;
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--t3);
+}
+
+.auth-message.error { color: var(--red); }
+
+.auth-message.success { color: var(--green); }
+
 .auth-tabs {
   display: flex; background: var(--bg3);
   border: 1px solid var(--b1); border-radius: 20px;

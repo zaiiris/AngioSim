@@ -312,10 +312,10 @@ def register(payload: dict) -> dict:
             )
             user_id = cur.lastrowid
         except sqlite3.IntegrityError:
-            user = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
-            if user is None:
-                raise
-            return {"user": row_to_dict(user)}
+            existing = conn.execute("SELECT id FROM users WHERE lower(email) = ?", (email,)).fetchone()
+            if existing is not None:
+                raise HTTPException(status_code=409, detail="Email is already registered")
+            raise
         user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
     return {"user": row_to_dict(user)}
