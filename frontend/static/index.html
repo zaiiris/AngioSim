@@ -88,12 +88,12 @@
           <label class="lbl" data-t="login_pass">Пароль</label>
           <input class="inp" id="login-password" type="password" value="demo">
         </div>
-        <button class="btn btn-primary btn-lg btn-full mb12" onclick="loginUser()">
+        <button type="button" class="btn btn-primary btn-lg btn-full mb12" onclick="loginUser()">
           <i class="fa-solid fa-arrow-right-to-bracket"></i>
           <span data-t="login_btn">Войти</span>
         </button>
         <div class="sep-line">или</div>
-        <button class="btn btn-ghost btn-full" onclick="demoLogin('student')">
+        <button type="button" class="btn btn-ghost btn-full" onclick="demoLogin('student')">
           <i class="fa-solid fa-flask"></i>
           <span data-t="demo_btn">Демо — войти как студент</span>
         </button>
@@ -104,12 +104,12 @@
         <div class="form-group mb12">
           <label class="lbl" data-t="reg_role">Роль</label>
           <div class="role-grid">
-            <div class="role-opt on" onclick="pickRole(this)">
+            <div class="role-opt on" data-role="student" onclick="pickRole(this)">
               <div class="role-em">🎓</div>
               <div class="role-name" data-t="role_student">Студент</div>
               <div class="role-desc" data-t="role_student_desc">Тренировки и прогресс</div>
             </div>
-            <div class="role-opt" onclick="pickRole(this)">
+            <div class="role-opt" data-role="teacher" onclick="pickRole(this)">
               <div class="role-em">👨‍🏫</div>
               <div class="role-name" data-t="role_teacher">Преподаватель</div>
               <div class="role-desc" data-t="role_teacher_desc">Мониторинг студентов</div>
@@ -128,11 +128,12 @@
           <label class="lbl" data-t="login_pass">Пароль</label>
           <input class="inp" id="reg-password" type="password">
         </div>
-        <button class="btn btn-primary btn-lg btn-full" onclick="registerUser()">
+        <button type="button" class="btn btn-primary btn-lg btn-full" onclick="registerUser()">
           <i class="fa-solid fa-user-plus"></i>
           <span data-t="reg_btn">Создать аккаунт</span>
         </button>
       </div>
+      <div id="auth-message" class="auth-message" role="status" aria-live="polite"></div>
     </div>
   </div>
 </div>
@@ -617,7 +618,23 @@ function pickRole(el) {
   document.querySelectorAll('.role-opt').forEach(r => r.classList.remove('on'));
   el.classList.add('on');
 }
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'http://127.0.0.1:8000';
+
+function setAuthMessage(message, type = '') {
+  const box = document.getElementById('auth-message');
+  if (!box) return;
+  box.textContent = message || '';
+  box.className = 'auth-message' + (type ? ' ' + type : '');
+}
+
+async function readApiError(response, fallback) {
+  try {
+    const data = await response.json();
+    return data.detail || fallback;
+  } catch (err) {
+    return fallback;
+  }
+}
 
 function saveAuth(user) {
   localStorage.setItem('as_user', JSON.stringify(user));
@@ -625,44 +642,67 @@ function saveAuth(user) {
 }
 
 async function loginUser() {
-  const email = document.getElementById('login-email').value;
+  setAuthMessage('');
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
   const password = document.getElementById('login-password').value;
+  if (!email || !password) {
+    setAuthMessage('Введите email и пароль.', 'error');
+    return;
+  }
   try {
     const response = await fetch(API_BASE + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    if (!response.ok) throw new Error('Login failed');
+    if (!response.ok) throw new Error(await readApiError(response, 'Неверный email или пароль.'));
+    setAuthMessage('Вход выполнен. Открываю профиль...', 'success');
     saveAuth((await response.json()).user);
   } catch (err) {
-    alert('Пользователь не найден. Используйте demo вход или регистрацию.');
+    setAuthMessage(err.message || 'Не удалось подключиться к API. Проверьте backend на 127.0.0.1:8000.', 'error');
   }
 }
 
 async function demoLogin(role) {
-  const response = await fetch(API_BASE + '/api/auth/demo?role=' + role);
-  saveAuth((await response.json()).user);
+  setAuthMessage('');
+  try {
+    const response = await fetch(API_BASE + '/api/auth/demo?role=' + encodeURIComponent(role));
+    if (!response.ok) throw new Error(await readApiError(response, 'Демо-пользователь не найден.'));
+    setAuthMessage('Демо-вход выполнен. Открываю кабинет...', 'success');
+    saveAuth((await response.json()).user);
+  } catch (err) {
+    setAuthMessage(err.message || 'Не удалось выполнить демо-вход. Проверьте backend.', 'error');
+  }
 }
 
 async function registerUser() {
-  const activeRole = document.querySelector('.role-opt.on .role-name');
-  const roleText = activeRole ? activeRole.textContent.toLowerCase() : '';
+  setAuthMessage('');
+  const activeRole = document.querySelector('.role-opt.on');
   const payload = {
-    full_name: document.getElementById('reg-name').value,
-    email: document.getElementById('reg-email').value,
-    university: document.getElementById('reg-university').value,
+    full_name: document.getElementById('reg-name').value.trim(),
+    email: document.getElementById('reg-email').value.trim().toLowerCase(),
+    university: document.getElementById('reg-university').value.trim(),
     password: document.getElementById('reg-password').value,
-    role: roleText.includes('teacher') || roleText.includes('преп') || roleText.includes('оқыт') ? 'teacher' : 'student'
+    role: activeRole ? activeRole.dataset.role : 'student'
   };
-  const response = await fetch(API_BASE + '/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) return alert('Заполните имя и email.');
-  saveAuth((await response.json()).user);
+  if (!payload.full_name || !payload.email || !payload.password) {
+    setAuthMessage('Заполните имя, email и пароль.', 'error');
+    return;
+  }
+  try {
+    const response = await fetch(API_BASE + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(await readApiError(response, 'Не удалось создать аккаунт.'));
+    setAuthMessage('Аккаунт создан и сохранен в базе. Открываю кабинет...', 'success');
+    saveAuth((await response.json()).user);
+  } catch (err) {
+    setAuthMessage(err.message || 'Не удалось зарегистрироваться. Проверьте backend.', 'error');
+  }
 }
+
 // counters
 function animCount(el, target) {
   let v = 0; const step = Math.ceil(target/40);

@@ -14,22 +14,30 @@ Project parts:
 
 ## Run Locally
 
-Start the backend:
+Start the backend in PowerShell window 1:
 
 ```powershell
 .\start_backend.ps1
 ```
 
-Start the frontend in another terminal:
+Start the frontend in PowerShell window 2:
 
 ```powershell
 .\start_frontend.ps1
 ```
 
-Open:
+Open this address in your normal browser, for example Yandex Browser:
 
 ```text
 http://127.0.0.1:8080/index.html
+```
+
+Keep both PowerShell windows open while you use the app. If you close them, the local site stops.
+
+Backend API runs here:
+
+```text
+http://127.0.0.1:8000
 ```
 
 Demo users:
